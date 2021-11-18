@@ -1,4 +1,7 @@
-package com.alocoifindo.tradingcards;
+/*
+ * GNU General Public License v3.0
+ */
+package com.alocoifindo.ecommerce;
 
 import java.awt.event.KeyEvent;
 import java.sql.Connection;
@@ -17,13 +20,16 @@ import java.util.Scanner;
  */
 public class Application {
 
-    static boolean DEBUG = false;
+    static boolean DEBUG = true;
     static String username;
     static String pass;
     static String telephone;
     static String email;
-    static String firstName;
-    static String surname;
+    static String firstname;
+    static String lastname;
+
+    public Application() {
+    }
 
     public static String getUsername() {
         return username;
@@ -61,12 +67,22 @@ public class Application {
         MainMenu();
     }
 
-    static private Connection startConnection() throws SQLException {
-        String urlDB = "jdbc:derby://localhost:1527/DAM_Project";
-        String user = "root";
-        String pswd = "0884";
-        Connection c = DriverManager.getConnection(urlDB, user, pswd);
-        return c;
+    static public Connection startConnection() throws SQLException {
+        Connection con = null;
+        try {
+            // MySQL Driver dependency driver for Maven
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            String urlDB = "jdbc:mysql://localhost:3306/rentyourstuff";
+            String user = "root";
+            String pass = "pa88#word";
+            con = DriverManager.getConnection(urlDB, user, pass);
+            if (DEBUG) {
+                System.out.println("Connected to Database");
+            }
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+            }
+        return con;
     }
 
     static void MainMenu() throws SQLException {
@@ -111,26 +127,26 @@ public class Application {
         Scanner keyboard = new Scanner(System.in);
         do {
             System.out.println("Enter your user: ");
-            String user = keyboard.next();
-            if (user.equals("0")) {
+            username = keyboard.next();
+            if (username.equals("0")) {
                 break;
             }
-            setUsername(user);
+            setUsername(username);
             System.out.println("Enter your password: ");
             pass = keyboard.next();
             if (pass.equals("0")) {
                 break;
             }
 
-            Connection c = startConnection();
+            Connection con = startConnection();
 
-            PreparedStatement sel = c.prepareStatement("SELECT typeuser FROM Users WHERE username=? and password=?");
-            sel.setString(1, user);
+            PreparedStatement sel = con.prepareStatement("SELECT user_type FROM Users WHERE username=? and pass=?");
+            sel.setString(1, username);
             sel.setString(2, pass);
-            ResultSet r = sel.executeQuery();
+            ResultSet rs = sel.executeQuery();
 
-            if (r.next()) {
-                type = r.getInt(1);
+            if (rs.next()) {
+                type = rs.getInt(1);
                 valid = true;
                 if (DEBUG) {
                     System.out.println("The user type is: " + type);
@@ -140,9 +156,9 @@ public class Application {
             }
 
             try {
-                c.close();
+                con.close();
             } finally {
-                c = null;
+                con = null;
             }
         } while (!valid);
 
@@ -237,13 +253,13 @@ public class Application {
 
         do {
             System.out.println("\nInsert your name: ");
-            firstName = keyboard.next();
-            if (firstName.equals("0")) {
+            firstname = keyboard.next();
+            if (firstname.equals("0")) {
                 break;
             }
             System.out.println("Insert your surname: ");
-            surname = keyboard.next();
-            if (surname.equals("0")) {
+            lastname = keyboard.next();
+            if (lastname.equals("0")) {
                 break;
             }
             System.out.println("Insert your telephone: ");
@@ -267,7 +283,7 @@ public class Application {
                 break;
             }
             if (DEBUG) {
-                System.out.println("\nUser: " + firstName + " " + surname + " "
+                System.out.println("\nUser: " + firstname + " " + lastname + " "
                         + telephone + " " + email + " " + username + " " + pass);
             }
 
@@ -306,8 +322,8 @@ public class Application {
 
             PreparedStatement Insert = c.prepareStatement("INSERT INTO Users VALUES (?,?,?,?,?,?,?,?)");
             Insert.setInt(1, id);
-            Insert.setString(2, firstName);
-            Insert.setString(3, surname);
+            Insert.setString(2, firstname);
+            Insert.setString(3, lastname);
             Insert.setString(4, telephone);
             Insert.setString(5, email);
             Insert.setString(6, username);
@@ -467,7 +483,7 @@ public class Application {
     private static void addAdmin() throws SQLException {
         int id = 1;
         String firstName;
-        String surname = "";
+        String lastName = "";
 
         boolean valid = false;
         Scanner keyboard = new Scanner(System.in);
@@ -480,8 +496,8 @@ public class Application {
                     break;
                 }
                 System.out.println("Insert admin surname: ");
-                surname = keyboard.next();
-                if (surname.equals("0")) {
+                lastName = keyboard.next();
+                if (lastName.equals("0")) {
                     break;
                 }
                 System.out.println("Insert admin telephone: ");
@@ -505,7 +521,7 @@ public class Application {
                     break;
                 }
                 if (DEBUG) {
-                    System.out.println("UserAdmin: " + firstName + " " + surname + " "
+                    System.out.println("UserAdmin: " + firstName + " " + lastName + " "
                             + telephone + " " + email + " " + username + " " + pass);
                 }
 
@@ -546,7 +562,7 @@ public class Application {
                 PreparedStatement Insert = c.prepareStatement("INSERT INTO Users VALUES (?,?,?,?,?,?,?,?)");
                 Insert.setInt(1, id);
                 Insert.setString(2, firstName);
-                Insert.setString(3, surname);
+                Insert.setString(3, lastName);
                 Insert.setString(4, telephone);
                 Insert.setString(5, email);
                 Insert.setString(6, username);
@@ -876,8 +892,8 @@ public class Application {
 //            actualPass = keyboard.next();
 //
 //            if (actualPass.equals(getPass())){
-//                Connection c = startConnection();
-//                PreparedStatement sel = c.prepareStatement("SELECT * FROM Users "
+//                Connection con = startConnection();
+//                PreparedStatement sel = con.prepareStatement("SELECT * FROM Users "
 //                        + "WHERE username='" + getUsername() + "' AND password='" + actualPass + "'");
 //                ResultSet r = sel.executeQuery();
 //                if (r.next()) {
@@ -888,7 +904,7 @@ public class Application {
 //                    confirmationPass = keyboard.next();
 //                    if (newPass.equals(confirmationPass)) {
 //                        setPass(newPass);
-//                        PreparedStatement upd = c.prepareStatement("UPDATE Users SET password = '" + newPass + "' WHERE username = '" + getUsername() + "'");
+//                        PreparedStatement upd = con.prepareStatement("UPDATE Users SET password = '" + newPass + "' WHERE username = '" + getUsername() + "'");
 //                        upd.executeUpdate();
 //                    }
 //                } 
@@ -896,9 +912,9 @@ public class Application {
 //                    System.out.println("Wrong password.");
 //                }
 //                try {
-//                    c.close();
+//                    con.close();
 //                } finally {
-//                    c = null;
+//                    con = null;
 //                }
 //            } else {
 //                System.out.println("Actual password doesn't match");
