@@ -18,7 +18,7 @@ import java.util.Scanner;
  *
  * @author facundoferreyra
  */
-public class Application {
+public class ApplicationConsoleOld {
 
     static boolean DEBUG = true;
     static String username;
@@ -28,7 +28,7 @@ public class Application {
     static String firstname;
     static String lastname;
 
-    public Application() {
+    public ApplicationConsoleOld() {
     }
 
     public static String getUsername() {
@@ -36,7 +36,7 @@ public class Application {
     }
 
     public static void setUsername(String username) {
-        Application.username = username;
+        ApplicationConsoleOld.username = username;
     }
 
     public static String getPass() {
@@ -44,7 +44,7 @@ public class Application {
     }
 
     public static void setPass(String pass) {
-        Application.pass = pass;
+        ApplicationConsoleOld.pass = pass;
     }
 
     public static String getTelephone() {
@@ -52,7 +52,7 @@ public class Application {
     }
 
     public static void setTelephone(String telephone) {
-        Application.telephone = telephone;
+        ApplicationConsoleOld.telephone = telephone;
     }
 
     public static String getEmail() {
@@ -60,7 +60,7 @@ public class Application {
     }
 
     public static void setEmail(String email) {
-        Application.email = email;
+        ApplicationConsoleOld.email = email;
     }
 
     public static void main(String[] args) throws SQLException {

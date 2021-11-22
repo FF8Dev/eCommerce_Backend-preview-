@@ -14,17 +14,21 @@ import java.sql.SQLException;
  */
 public class LoginUI extends javax.swing.JFrame {
 
-    Application app = new Application();
-    ApplicationUI appUI = new ApplicationUI();
-    String username;
-    String password;
+    ApplicationMain app = new ApplicationMain();
+    static UserUI userUI = new UserUI();
+    static User enterUser = new User();
+    static String username;
+    static String password;
     static boolean privileges;
+    static boolean fromLogin;    
+    static boolean showAppUI;
     
     /**
      * Creates new form LoginUI
      */
     public LoginUI() {
         initComponents();
+        setLocationRelativeTo(null);
         getRootPane().setDefaultButton(loginButton);
     }
 
@@ -59,6 +63,11 @@ public class LoginUI extends javax.swing.JFrame {
         });
 
         signUpButton.setText("Sign Up");
+        signUpButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                signUpButtonActionPerformed(evt);
+            }
+        });
 
         jLabel3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/user_70.png"))); // NOI18N
 
@@ -113,10 +122,11 @@ public class LoginUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void loginButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginButtonActionPerformed
+        fromLogin = false;
         username = usernameField.getText();
         password = String.valueOf(passwordField.getPassword());
         try {
-            Connection con = app.startConnection();
+            Connection con = ApplicationMain.startConnection();
             
             PreparedStatement sel = con.prepareStatement("SELECT privileges FROM Users WHERE username=? and password=?");
             sel.setString(1, username);
@@ -132,7 +142,7 @@ public class LoginUI extends javax.swing.JFrame {
                     System.out.println("User is a Customer");
                 }
                 setVisible(false);
-                appUI.setVisible(true);
+                ApplicationUI.appUI.setVisible(true);
             } else {
                 System.out.println("The user doesn't exist");
             }
@@ -146,6 +156,16 @@ public class LoginUI extends javax.swing.JFrame {
            ex.printStackTrace();
         }
     }//GEN-LAST:event_loginButtonActionPerformed
+
+    private void signUpButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_signUpButtonActionPerformed
+        fromLogin = true;
+        username = usernameField.getText();
+        password = String.valueOf(passwordField.getPassword());
+        userUI.setVisible(true);
+        userUI.usernameField.setText(username);
+        userUI.passwordField.setText(password);
+        setVisible(false);
+    }//GEN-LAST:event_signUpButtonActionPerformed
 
     /**
      * @param args the command line arguments

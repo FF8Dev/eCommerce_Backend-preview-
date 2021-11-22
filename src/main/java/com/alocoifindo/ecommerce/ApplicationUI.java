@@ -3,25 +3,150 @@
  */
 package com.alocoifindo.ecommerce;
 
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
+import javax.swing.DefaultListModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
+
 /**
  *
  * @author facundoferreyra
  */
 public class ApplicationUI extends javax.swing.JFrame {
-
-    Application app = new Application();
-    static boolean DEBUG = true;
-    Order order = new Order();
-    
    
+    static Order order = new Order();
+    static MyChecklistTableModel tableModel = new MyChecklistTableModel();
+    static DefaultListModel listModel = new DefaultListModel();
+    static ApplicationUI appUI = new ApplicationUI();
     
     /**
      * Creates new form ApplicationUI
      */
     public ApplicationUI() {
         initComponents();
+        setLocationRelativeTo(null);
+        productsTableView();
+        // Table Display Model
+        productsTable.setRowHeight(50);
+        TableColumnModel columnModel = productsTable.getColumnModel();
+        columnModel.getColumn(0).setPreferredWidth(4);
+        columnModel.getColumn(1).setPreferredWidth(20);
+        columnModel.getColumn(2).setPreferredWidth(160);
+        columnModel.getColumn(3).setPreferredWidth(40);
+        columnModel.getColumn(4).setPreferredWidth(110);
+        columnModel.getColumn(5).setPreferredWidth(30);
+        columnModel.getColumn(6).setPreferredWidth(40);
     }
 
+    // Checklist Table !!! Image BLOB implent needed !!!
+    public static class MyChecklistTableModel extends DefaultTableModel implements TableModelListener{
+        public MyChecklistTableModel() {
+            super(new String[]{"Select", "Image", "Product", "Category", "Keywords", "Price/day", "Discount/day"}, 0);
+            addTableModelListener(this);
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+          Class clazz = String.class;
+          switch (columnIndex) {
+            case 0:
+                clazz = Boolean.class;
+                break;
+            case 1:
+                clazz = ImageIcon.class;
+                break;
+          }
+          return clazz;
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int column) {
+          return column == 0;
+        }
+
+        @Override
+        public void setValueAt(Object aValue, int row, int column) {
+          if (aValue instanceof Boolean && column == 0) {
+            Vector rowData = (Vector)getDataVector().get(row);
+            rowData.set(0, (boolean)aValue);
+            fireTableCellUpdated(row, column);
+          }
+        }
+
+        // Listener of checkbox !!! to change after image BLOB (column 1 to 2)
+        @Override
+        public void tableChanged(TableModelEvent e) {
+            int row = e.getFirstRow();
+
+            TableModel model = (TableModel)e.getSource();
+            Object data = model.getValueAt(row, 0);
+
+            if (data.equals(true)) {
+                listModel.addElement(model.getValueAt(row, 2)); 
+                itemsField.setText(String.valueOf(listModel.getSize()));
+            } else if (data.equals(false)) {
+                listModel.removeElement(model.getValueAt(row, 2));
+                itemsField.setText(String.valueOf(listModel.getSize()));
+            }
+        }
+    }
+    
+    private static void productsTableView() {
+        try {
+            Connection con = ApplicationMain.startConnection();
+        
+            String selectProductsSQL = "SELECT Image, CONCAT(brand, \" \", model_name) AS Product, Category, Keywords, price_per_day, discount_per_day FROM Products";
+            PreparedStatement stmtProducts = con.prepareStatement(selectProductsSQL);
+            ResultSet rsProducts = stmtProducts.executeQuery();
+            
+            while (rsProducts.next()) {
+                // Preparing Icon and get from ResultSet
+                ImageIcon icon = null;
+                InputStream is = rsProducts.getBinaryStream("Image"); 
+                // Decode the inputstream as BufferedImage
+                try {
+                    BufferedImage bufImg = null;
+                    bufImg = ImageIO.read(is);
+                    Image image = bufImg;
+                    icon =new ImageIcon(image);
+                } catch (IOException ioe) {
+                    System.out.println("Error catching image");
+                    ioe.printStackTrace();
+                }
+                // Get rest of ResultSet
+                String product = rsProducts.getString("Product");
+                String category = rsProducts.getString("Category");
+                String keywords = rsProducts.getString("Keywords");
+                int pricePerDay = rsProducts.getInt("price_per_day");
+                String pricePerDayDisplay = pricePerDay + " €";
+                int discountPerDay = rsProducts.getInt("discount_per_day");
+                String discountPerDayDisplay = discountPerDay + " %";
+                Object[] ProductRow = {false, icon, product, category, keywords, pricePerDayDisplay, discountPerDayDisplay};
+                tableModel.addRow(ProductRow);
+            }
+        } catch (SQLException ex) {
+            System.out.println("Problem in SQL Represent");
+            ex.printStackTrace();
+        }
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -50,17 +175,8 @@ public class ApplicationUI extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        productsTable.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
-            new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
-            }
-        ));
+        productsTable.setAutoCreateRowSorter(true);
+        productsTable.setModel(tableModel);
         tableScrollPane.setViewportView(productsTable);
 
         createOrderButton.setText("Create Order");
@@ -82,11 +198,7 @@ public class ApplicationUI extends javax.swing.JFrame {
 
         jLabel4.setText("to:");
 
-        itemsList.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
+        itemsList.setModel(listModel);
         itemsScrollPane.setViewportView(itemsList);
 
         itemsField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
@@ -127,7 +239,7 @@ public class ApplicationUI extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addGap(0, 18, Short.MAX_VALUE)
+                                .addGap(0, 0, Short.MAX_VALUE)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addComponent(jLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(discountField))
@@ -178,6 +290,8 @@ public class ApplicationUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    
+    
     /**
      * @param args the command line arguments
      */
@@ -208,7 +322,8 @@ public class ApplicationUI extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new ApplicationUI().setVisible(true);
+                appUI.setVisible(true);    
+                
             }
         });
     }
@@ -218,7 +333,7 @@ public class ApplicationUI extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> customerSelect;
     private javax.swing.JTextField daysField;
     private javax.swing.JTextField discountField;
-    private javax.swing.JTextField itemsField;
+    private static javax.swing.JTextField itemsField;
     private javax.swing.JList<String> itemsList;
     private javax.swing.JScrollPane itemsScrollPane;
     private javax.swing.JLabel jLabel1;
@@ -227,7 +342,7 @@ public class ApplicationUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel logoLabel;
-    private javax.swing.JTable productsTable;
+    public static javax.swing.JTable productsTable;
     private javax.swing.JScrollPane tableScrollPane;
     private javax.swing.JTextField totalPriceField;
     // End of variables declaration//GEN-END:variables
