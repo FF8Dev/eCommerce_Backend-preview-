@@ -5,15 +5,7 @@ package com.alocoifindo.ecommerce;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Vector;
-import javax.swing.DefaultListModel;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 
 /**
  *
@@ -22,7 +14,8 @@ import javax.swing.table.TableModel;
 public class ApplicationMain {
 
     static boolean DEBUG = true;
-    static LoginUI loginUI = new LoginUI();
+    static Customer customer = new Customer();
+    static Order order = new Order();
     
     static public Connection startConnection() throws SQLException {
         Connection con = null;
@@ -42,11 +35,22 @@ public class ApplicationMain {
         return con;
     }
     
+    static public void stopConnection(Connection con) throws SQLException {
+        try {
+                con.close();
+        } finally {
+            con = null;
+            if (DEBUG) {
+                System.out.println("Database connection exit");
+            }
+        }   
+    }
+    
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        loginUI.main(args);
+        LoginUI.loginUI.main(args);
     }
     
 }
