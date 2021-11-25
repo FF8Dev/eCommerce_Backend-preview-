@@ -11,7 +11,7 @@ public class Customer extends User{
     String firstname;
     String lastname;
     String addressLine;
-    String postalcode;
+    int postalcode;
     String city;
     String email;
     int telephone;
@@ -22,6 +22,22 @@ public class Customer extends User{
     public Customer() {
     }
 
+    public Customer(String username, String password, String firstname, String lastname, String addressLine, int postalcode, String city, String email, int telephone, int discount) {
+        super(username, password);
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.addressLine = addressLine;
+        this.postalcode = postalcode;
+        this.city = city;
+        this.email = email;
+        this.telephone = telephone;
+        this.discount = discount;
+    }
+ 
+    public Customer getCustomerByUsername(String username) {
+        return this;
+    }
+    
     public String getFirstname() {
         return firstname;
     }
@@ -46,11 +62,11 @@ public class Customer extends User{
         this.addressLine = addressLine;
     }
 
-    public String getPostalcode() {
+    public int getPostalcode() {
         return postalcode;
     }
 
-    public void setPostalcode(String postalcode) {
+    public void setPostalcode(int postalcode) {
         this.postalcode = postalcode;
     }
 

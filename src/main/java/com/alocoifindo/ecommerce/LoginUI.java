@@ -15,13 +15,15 @@ import java.sql.SQLException;
 public class LoginUI extends javax.swing.JFrame {
 
     ApplicationMain app = new ApplicationMain();
-    static UserUI userUI = new UserUI();
+    
     static User enterUser = new User();
+    static int idUser;
     static String username;
     static String password;
     static boolean privileges;
     static boolean fromLogin;    
     static boolean showAppUI;
+    static LoginUI loginUI = new LoginUI();
     
     /**
      * Creates new form LoginUI
@@ -50,6 +52,7 @@ public class LoginUI extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("RentYourStuff");
 
         jLabel1.setText("username:");
 
@@ -128,10 +131,10 @@ public class LoginUI extends javax.swing.JFrame {
         try {
             Connection con = ApplicationMain.startConnection();
             
-            PreparedStatement sel = con.prepareStatement("SELECT privileges FROM Users WHERE username=? and password=?");
-            sel.setString(1, username);
-            sel.setString(2, password);
-            ResultSet rs = sel.executeQuery();
+            PreparedStatement stmt = con.prepareStatement("SELECT privileges, id_user FROM Users WHERE username=? and password=?");
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            ResultSet rs = stmt.executeQuery();
             
             if (rs.next()) {
                 if (rs.getInt(1) == 1){
@@ -141,16 +144,16 @@ public class LoginUI extends javax.swing.JFrame {
                     privileges = false;
                     System.out.println("User is a Customer");
                 }
+                idUser = rs.getInt("id_user");
+                
                 setVisible(false);
                 ApplicationUI.appUI.setVisible(true);
+                
+                
             } else {
                 System.out.println("The user doesn't exist");
             }
-            try {
-                con.close();
-            } finally {
-                con = null;
-            }
+            ApplicationMain.stopConnection(con);
             
         } catch (SQLException ex) {
            ex.printStackTrace();
@@ -161,24 +164,28 @@ public class LoginUI extends javax.swing.JFrame {
         fromLogin = true;
         username = usernameField.getText();
         password = String.valueOf(passwordField.getPassword());
-        userUI.setVisible(true);
-        userUI.usernameField.setText(username);
-        userUI.passwordField.setText(password);
-        setVisible(false);
+        UserUI.userUI.setVisible(true);
+        UserUI.userUI.usernameField.setText(username);
+        UserUI.userUI.passwordField.setText(password);        
     }//GEN-LAST:event_signUpButtonActionPerformed
 
+    public void assignCustomer(Customer cust) {
+        cust.setUsername(username);
+        cust.setPassword(password);
+        ApplicationMain.customer = cust;
+    }
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
+        /* Set the System look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
+                if ("System".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
@@ -197,7 +204,7 @@ public class LoginUI extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new LoginUI().setVisible(true);
+                loginUI.setVisible(true);
             }
         });
     }

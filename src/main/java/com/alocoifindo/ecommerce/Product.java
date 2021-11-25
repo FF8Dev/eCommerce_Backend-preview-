@@ -9,17 +9,14 @@ package com.alocoifindo.ecommerce;
  */
 public class Product {
     private int id;
-    private String brand;
-    private String modelName;
+    private String productName;
     private byte image;
     private double pricePerDay;
     private int discountPerDay;
 
-    public Product(int id, String brand, String modelName, byte image, double pricePerDay, int discountPerDay) {
+    public Product(int id, String productName, double pricePerDay, int discountPerDay) {
         this.id = id;
-        this.brand = brand;
-        this.modelName = modelName;
-        this.image = image;
+        this.productName = productName;
         this.pricePerDay = pricePerDay;
         this.discountPerDay = discountPerDay;
     }
@@ -32,37 +29,12 @@ public class Product {
         this.id = id;
     }
 
-    
-    public String getBrand() {
-        return brand;
-    }
-
-    public void setBrand(String brand) {
-        this.brand = brand;
-    }
-
-    public String getModelName() {
-        return modelName;
-    }
-
-    public void setModelName(String modelName) {
-        this.modelName = modelName;
-    }
-
-    public byte getImage() {
-        return image;
-    }
-
-    public void setImage(byte image) {
-        this.image = image;
-    }
-    
     public String getProductName() {
-        return modelName;
+        return productName;
     }
 
     public void setProductName(String productName) {
-        this.modelName = productName;
+        this.productName = productName;
     }
 
     public double getPrice() {

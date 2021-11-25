@@ -18,20 +18,44 @@ public class UserUI extends javax.swing.JFrame {
     int id_user_new;
     int discount;
     int id_userCreator;
-
+    static UserUI userUI = new UserUI();
+    
     /**
      * Creates new form UserUI
      */
     public UserUI() {
         initComponents();
         setLocationRelativeTo(null);
+        getRootPane().setDefaultButton(updateButton);
+        
         discountLabel.setVisible(LoginUI.privileges);
         discountField.setVisible(LoginUI.privileges);
-        createUserButton.setVisible(LoginUI.fromLogin);
-        updateButton.setVisible(!LoginUI.fromLogin);
-        getRootPane().setDefaultButton(updateButton);
+        // createUserButton#Visibile(true) if Admin
+        createUserButton.setVisible(LoginUI.privileges);
+        // updateButton#Visible(false) if cames from Login SignUp
+        updateButton.setVisible(!(LoginUI.fromLogin));
+        // createUserButton#Visibile(true) if cames from Login SignUp
+        if (LoginUI.fromLogin == true && LoginUI.privileges == false) {
+            createUserButton.setVisible(true);
+        }
+        
+        if (LoginUI.privileges == false) {
+            callCustomerData();
+        } 
     }
 
+    public static void callCustomerData() {
+        usernameField.setText(ApplicationMain.customer.getUsername());
+        passwordField.setText(ApplicationMain.customer.getPassword());
+        firstnameField.setText(ApplicationMain.customer.getFirstname());
+        lastnameField.setText(ApplicationMain.customer.getLastname());
+        telephoneField.setText(String.valueOf(ApplicationMain.customer.getTelephone()));
+        emailField.setText(ApplicationMain.customer.getEmail());
+        addressField.setText(ApplicationMain.customer.getAddressLine());
+        postalcodeField.setText(String.valueOf(ApplicationMain.customer.getPostalcode()));
+        discountField.setText(String.valueOf(ApplicationMain.customer.getDiscount()));
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -68,9 +92,10 @@ public class UserUI extends javax.swing.JFrame {
 
         jToggleButton1.setText("jToggleButton1");
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setTitle("Customer Data");
 
-        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/user_70.png"))); // NOI18N
+        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/customer_70.png"))); // NOI18N
 
         jLabel2.setText("First Name:");
 
@@ -119,50 +144,50 @@ public class UserUI extends javax.swing.JFrame {
                         .addComponent(createUserButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(updateButton))
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(layout.createSequentialGroup()
-                            .addGap(78, 78, 78)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                .addComponent(jLabel2)
-                                .addComponent(jLabel3)
-                                .addComponent(jLabel7)
-                                .addComponent(jLabel6))
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(telephoneField, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(lastnameField, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, 171, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(firstnameField, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                .addGroup(layout.createSequentialGroup()
-                                    .addGap(26, 26, 26)
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                            .addComponent(jLabel10)
-                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                            .addComponent(cityField, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addGroup(layout.createSequentialGroup()
-                                            .addComponent(jLabel11)
-                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                            .addComponent(postalcodeField, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                                .addComponent(jLabel9)
-                                .addComponent(addressField, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGroup(layout.createSequentialGroup()
-                            .addContainerGap()
-                            .addComponent(jLabel1)
-                            .addGap(18, 18, 18)
-                            .addComponent(jLabel4)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(usernameField, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(jLabel5)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(passwordField, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(discountLabel)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(discountField, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(12, 12, 12)
+                        .addComponent(jLabel1)
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel4)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(usernameField, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel5)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(passwordField, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(discountLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(discountField, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addComponent(jLabel2)
+                                    .addComponent(jLabel3)
+                                    .addComponent(jLabel7)
+                                    .addComponent(jLabel6))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(telephoneField, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(lastnameField, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, 171, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(firstnameField, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(26, 26, 26)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                                .addComponent(jLabel10)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(cityField, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                            .addGroup(layout.createSequentialGroup()
+                                                .addComponent(jLabel11)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(postalcodeField, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                                    .addComponent(jLabel9)
+                                    .addComponent(addressField, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE))))))
                 .addContainerGap(18, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -170,7 +195,7 @@ public class UserUI extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
+                        .addGap(12, 12, 12)
                         .addComponent(jLabel1))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(23, 23, 23)
@@ -223,7 +248,7 @@ public class UserUI extends javax.swing.JFrame {
 
     private void updateButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateButtonActionPerformed
         try {
-            Connection con = ApplicationConsoleOld.startConnection();
+            Connection con = ApplicationMain.startConnection();
             
             // find last ID_user
             PreparedStatement lastId_stmt = con.prepareStatement("SELECT max(id_user) FROM Users");
@@ -272,11 +297,7 @@ public class UserUI extends javax.swing.JFrame {
                 System.out.println("Data not inserted");
             }
  
-            try {
-                con.close();
-            } finally {
-                con = null;
-            }
+            ApplicationMain.stopConnection(con);
             
         } catch (SQLException ex) {
            ex.printStackTrace();
@@ -285,7 +306,7 @@ public class UserUI extends javax.swing.JFrame {
 
     private void createUserButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createUserButtonActionPerformed
         try {
-            Connection con = ApplicationConsoleOld.startConnection();
+            Connection con = ApplicationMain.startConnection();
             
             // if comes fromLoginUI = Find last ID for INSERT NEW USER
             if (LoginUI.fromLogin) {
@@ -330,29 +351,27 @@ public class UserUI extends javax.swing.JFrame {
                 e.printStackTrace();
                 System.out.println("Data not uploaded");
             }
-            try {
-                con.close();
-            } finally {
-                con = null;
-            }
+            ApplicationMain.stopConnection(con);
             
         } catch (SQLException ex) {
            ex.printStackTrace();
         }
+        // loginUI#Visible(false) if exist
+        LoginUI.loginUI.setVisible(false);
     }//GEN-LAST:event_createUserButtonActionPerformed
 
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
+        /* Set the System look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
+                if ("System".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
@@ -371,19 +390,19 @@ public class UserUI extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new UserUI().setVisible(true);
+                userUI.setVisible(true);
             }
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextField addressField;
-    private javax.swing.JTextField cityField;
-    private javax.swing.JButton createUserButton;
-    private javax.swing.JTextField discountField;
-    private javax.swing.JLabel discountLabel;
-    private javax.swing.JTextField emailField;
-    private javax.swing.JTextField firstnameField;
+    private static javax.swing.JTextField addressField;
+    private static javax.swing.JTextField cityField;
+    private static javax.swing.JButton createUserButton;
+    private static javax.swing.JTextField discountField;
+    private static javax.swing.JLabel discountLabel;
+    private static javax.swing.JTextField emailField;
+    private static javax.swing.JTextField firstnameField;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -395,11 +414,11 @@ public class UserUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JToggleButton jToggleButton1;
-    private javax.swing.JTextField lastnameField;
+    private static javax.swing.JTextField lastnameField;
     public static javax.swing.JPasswordField passwordField;
-    private javax.swing.JTextField postalcodeField;
-    private javax.swing.JTextField telephoneField;
-    private javax.swing.JButton updateButton;
+    private static javax.swing.JTextField postalcodeField;
+    private static javax.swing.JTextField telephoneField;
+    private static javax.swing.JButton updateButton;
     public static javax.swing.JTextField usernameField;
     // End of variables declaration//GEN-END:variables
 }
