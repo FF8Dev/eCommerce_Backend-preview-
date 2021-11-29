@@ -146,6 +146,7 @@ public class LoginUI extends javax.swing.JFrame {
                 }
                 idUser = rs.getInt("id_user");
                 
+                
                 setVisible(false);
                 ApplicationUI.appUI.setVisible(true);
                 
