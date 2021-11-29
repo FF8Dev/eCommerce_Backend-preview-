@@ -41,13 +41,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     static List<Customer> customers = new ArrayList<Customer>();
     static String tempUsername = "default_customer";
     
-    static List<Product> products = new ArrayList<>();
     static double totalProductPricePerDay = 0;
     static double totalPrice;
-    static int days;
     
     static DefaultComboBoxModel customersComboBoxModel = new DefaultComboBoxModel();
-    static MyChecklistTableModel tableModel = new MyChecklistTableModel();
+    static ProductsChecklistTableModel productsTableModel = new ProductsChecklistTableModel();
     static DefaultListModel listModel = new DefaultListModel();
     static ApplicationUI appUI = new ApplicationUI();
     
@@ -58,41 +56,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         initComponents();
         setLocationRelativeTo(null);
         
-        try {
-            Connection con = ApplicationMain.startConnection();
-            
-            PreparedStatement stmtRstOrderLine = con.prepareStatement("DELETE FROM order_line");
-            PreparedStatement stmtRstIncrem = con.prepareStatement("ALTER TABLE order_line AUTO_INCREMENT = 1");
-            PreparedStatement stmtRstOrderNotFinished = con.prepareStatement("DELETE FROM orders WHERE shipment_status = 'Not Finished'");
-            
-            
-            stmtRstOrderLine.executeUpdate();
-            stmtRstIncrem.execute();
-            stmtRstOrderNotFinished.executeUpdate();
-            
-            PreparedStatement stmtOrderId = con.prepareStatement("SELECT MAX(id_order) AS id_order FROM Orders");
-            ResultSet rsOrdId = stmtOrderId.executeQuery();
-            rsOrdId.next();
-            idOrder = rsOrdId.getInt("id_order") +1;
-            if (ApplicationMain.DEBUG) {
-                System.out.println("next order_id: " + idOrder);
-            }
-            
-            PreparedStatement stmtOrdCreate = con.prepareStatement("INSERT INTO orders VALUES (?, NOW(), 1, null, 'Not Finished', NOW(), ?)");
-            stmtOrdCreate.setInt(1, idOrder);
-            stmtOrdCreate.setInt(2, LoginUI.idUser);
-            if (ApplicationMain.DEBUG) {
-                System.out.println("idUser: " + LoginUI.idUser);
-            }
-            stmtOrdCreate.executeUpdate();
-            
-            ApplicationMain.stopConnection(con);
-        } catch (SQLException ex) {
-            System.out.println("Cannot DELETE FROM order_line TABLE OR SELECT MAX(id_order) OR INSERT NEW order");
-            ex.printStackTrace();
-        }
+        ApplicationMain.customer.setId(2);
+        setOrderId();
         
-        ApplicationMain.order.setId(idOrder);
         
         listCustomers();
         customerSelect.addItemListener(new discountByCustomerListener());
@@ -112,17 +78,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         discountField.setText("0");
         totalPriceField.setText("0.00");
         
-        daysSpinner.addChangeListener(new ChangeListener() {
-                @Override
-                public void stateChanged(ChangeEvent e) {
-                    JSpinner spinner = (JSpinner) e.getSource();
-                    int value = (int)spinner.getValue();
-                    days =  value;
-                }
-            });
+        daysSpinner.addChangeListener(new daysListener());
         
         addWindowListener(this);
         }
+    
     @Override
     public void windowClosing(WindowEvent e) {
         System.out.println("WindowListener method called: windowClosing.");
@@ -188,8 +148,68 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         System.out.println("WindowListener method called: windowDeactivated.");
     }
 
+    private void setOrderId() {
+        try {
+            Connection con = ApplicationMain.startConnection();
+            
+            PreparedStatement stmtRstOrderLine = con.prepareStatement("DELETE FROM order_line");
+            PreparedStatement stmtRstIncrem = con.prepareStatement("ALTER TABLE order_line AUTO_INCREMENT = 1");
+            PreparedStatement stmtRstOrderNotFinished = con.prepareStatement("DELETE FROM orders WHERE shipment_status = 'Not Finished'");
+            
+            
+            stmtRstOrderLine.executeUpdate();
+            stmtRstIncrem.execute();
+            stmtRstOrderNotFinished.executeUpdate();
+            
+            PreparedStatement stmtOrderId = con.prepareStatement("SELECT MAX(id_order) AS id_order FROM Orders");
+            ResultSet rsOrdId = stmtOrderId.executeQuery();
+            rsOrdId.next();
+            idOrder = rsOrdId.getInt("id_order") +1;
+            ApplicationMain.order.setId(idOrder);
+            if (ApplicationMain.DEBUG) {
+                System.out.println("next order_id: " + idOrder);
+            }
+            
+            PreparedStatement stmtOrdCreate = con.prepareStatement("INSERT INTO orders VALUES (?, NOW(), 1, null, 'Not Finished', NOW(), ?, ?)");
+            stmtOrdCreate.setInt(1, idOrder);
+            stmtOrdCreate.setInt(2, LoginUI.idUser);
+            stmtOrdCreate.setInt(3, ApplicationMain.customer.getId());
+            if (ApplicationMain.DEBUG) {
+                System.out.println("idUser: " + LoginUI.idUser);
+            }
+            stmtOrdCreate.executeUpdate();
+            
+            ApplicationMain.stopConnection(con);
+        } catch (SQLException ex) {
+            System.out.println("Cannot DELETE FROM order_line TABLE OR SELECT MAX(id_order) OR INSERT NEW order");
+            ex.printStackTrace();
+        }
+        
+        ApplicationMain.order.setId(idOrder);
+    }
 
-
+    public class daysListener implements ChangeListener {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            JSpinner spinner = (JSpinner) e.getSource();
+            ApplicationMain.totalDays = (int)spinner.getValue();
+            
+            try {
+            Connection con = ApplicationMain.startConnection();
+            
+            String updateDaysSQL = "UPDATE Orders SET total_days=? WHERE id_order=?";
+            PreparedStatement stmtUpdDay = con.prepareStatement(updateDaysSQL);
+            stmtUpdDay.setInt(1, ApplicationMain.totalDays);
+            stmtUpdDay.setInt(2, idOrder);
+            stmtUpdDay.executeUpdate();
+            
+            } catch (SQLException ex) {
+                System.out.println("Cannot UPDATE total_days in Order");
+                ex.printStackTrace();
+            }
+        }
+    }
+    
     public static void listCustomers() {
         
         try {
@@ -231,21 +251,43 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         public void itemStateChanged(ItemEvent event) {
             if (event.getStateChange() == ItemEvent.SELECTED) {
                 Object item = event.getItem();
+                // add to tempUsername username of list & to ApplicationMain.customer
                 tempUsername = item.toString();
-
+                ApplicationMain.customer.setUsername(tempUsername);
+                System.out.println("tempUsername: " + tempUsername);
+                OrderUI.customerLabel.setText(tempUsername);
+                
                 try {
                     Connection con = ApplicationMain.startConnection();
-                    String selectDiscountsSQL = "SELECT username, discount FROM Users NATURAL JOIN Customers WHERE users.id_user = customers.id_user AND username=? ORDER BY id_user ASC;";
+                    String selectDiscountsSQL = "SELECT id_user, username, discount FROM Users NATURAL JOIN Customers WHERE users.id_user = customers.id_user AND username=? ORDER BY id_user ASC;";
                     PreparedStatement stmtDiscounts = con.prepareStatement(selectDiscountsSQL);
                     stmtDiscounts.setString(1, tempUsername);
-                    ResultSet rsDiscounts = stmtDiscounts.executeQuery();
+                    ResultSet rsCustSelected = stmtDiscounts.executeQuery();
+                    rsCustSelected.next();
                     
-                    rsDiscounts.next();
-                    int discount = rsDiscounts.getInt("discount");
-                    discountField.setText(String.valueOf(discount));
+                    int tempId = rsCustSelected.getInt("id_user");
+                    
+                    int tempDiscount = rsCustSelected.getInt("discount");
+                    
+                    if (ApplicationMain.DEBUG) {
+                        System.out.println("TempId customer selected: " + tempId);
+                        System.out.println("Discount customer selected: " + tempDiscount);
+                    }
+                    
+                    String updateOrderSQL = "UPDATE Orders SET id_tocustomer=? WHERE id_order=?";
+                    PreparedStatement stmtUpdOrd = con.prepareStatement(updateOrderSQL);
+                    stmtUpdOrd.setInt(1, tempId);
+                    stmtUpdOrd.setInt(2, idOrder);
+                    stmtUpdOrd.executeUpdate();
+                    
+                    // Update ApplicationMain.customer && set discount in fieldUI
+                    ApplicationMain.customer.setId(tempId);
+                    ApplicationMain.customer.setDiscount(tempDiscount);
+                    discountField.setText(String.valueOf(tempDiscount));
+                    
                     ApplicationMain.stopConnection(con);
                 } catch (SQLException ex) {
-                      System.out.println("Error while setting Discount percentage");
+                      System.out.println("Error while setting Discount percentage OR Update id_toCustomer");
                       ex.printStackTrace(); 
                 }
            }
@@ -253,7 +295,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     }
     
     // Checklist Table
-    public static class MyChecklistTableModel extends DefaultTableModel implements TableModelListener{
+    public static class ProductsChecklistTableModel extends DefaultTableModel implements TableModelListener{
         boolean listedProduct = false;
         String priceWithSymbol;
         double pricePerProduct; 
@@ -262,7 +304,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         double discountComma;
         
         // add tableListener in this & Column Identifiers
-        public MyChecklistTableModel() {
+        public ProductsChecklistTableModel() {
             super(new String[]{"Select", "Image", "Product", "Category", "Keywords", "Price/day", "Discount/day"}, 0);
             addTableModelListener(this);
         }
@@ -301,7 +343,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         public void tableChanged(TableModelEvent e) {
             int row = e.getFirstRow();
             if (ApplicationMain.DEBUG) {
-                System.out.println("Row nº" + row);
+                System.out.println("Row ProductTable changed nº" + row);
             }
             
             TableModel model = (TableModel)e.getSource();
@@ -327,11 +369,14 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 try {
                     Connection con = ApplicationMain.startConnection();
                     
-                    PreparedStatement stmtIns = con.prepareStatement("INSERT INTO order_line (id_product, id_order) VALUES (?, ?);");
-                    System.out.println("Product ID: " + products.get(row).getId());
-                    stmtIns.setInt(1, products.get(row).getId());
-                    stmtIns.setInt(2, ApplicationMain.order.getId());
-                    stmtIns.executeUpdate();
+                    // !!! id_order_line not match the order num !!!
+                    PreparedStatement stmtIns = con.prepareStatement("INSERT INTO order_line (id_product, id_order, days) VALUES (?, ?, ?);");
+                    System.out.println("Product ID insert into order_line: " + ApplicationMain.products.get(row).getId());
+                    
+                        stmtIns.setInt(1, ApplicationMain.products.get(row).getId());
+                        stmtIns.setInt(2, ApplicationMain.order.getId());
+                        stmtIns.setInt(3, ApplicationMain.totalDays);
+                        stmtIns.executeUpdate();
                     
                     ApplicationMain.stopConnection(con);
                 } catch (SQLException ex) {
@@ -339,19 +384,10 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     ex.printStackTrace();
                 }
                 
-//             // add item in pricePerProduct by days for totalPriceField
-//                if (days == 1) {
-//                    totalPrice += pricePerProduct;
-//                    totalPriceField.setText(String.format("%.2f", totalPrice));
-//                } else {
-//                    totalPrice = pricePerProduct + (((pricePerProduct * (days-1)) * discountComma));
-//                    totalPriceField.setText(String.format("%.2f", totalPrice));
-//                }
-                
                 // activate remove item values
                 listedProduct = true;
                 
-            // if checkmark false !!! edit order_line
+            // if checkmark false
             } else if (data.equals(false)) {
                 // product list remove
                 listModel.removeElement(model.getValueAt(row, 2));
@@ -368,14 +404,21 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     discountPerProduct = Integer.parseInt(discountWithSymbol.replaceAll("[^0-9]", ""));
                     discountComma = (100.0 - discountPerProduct) / 100.0;
                     
-//                 // remove item in pricePerProduct by days for totalPriceField
-//                    if (days == 1) {
-//                        totalPrice -= pricePerProduct;
-//                        totalPriceField.setText(String.format("%.2f", totalPrice));
-//                    } else {
-//                        totalPrice = pricePerProduct - (((pricePerProduct * (days-1)) * discountComma));
-//                        totalPriceField.setText(String.format("%.2f", totalPrice));
-//                    }
+                    // DELETE from SQL ´order_line´ Temp
+                    try {
+                        Connection con = ApplicationMain.startConnection();
+
+                        PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
+                        System.out.println("Product ID deleted from order_line: " + ApplicationMain.products.get(row).getId());
+                        stmtDel.setInt(1, ApplicationMain.products.get(row).getId());
+                        stmtDel.executeUpdate();
+
+                        ApplicationMain.stopConnection(con);
+                    } catch (SQLException ex) {
+                        System.out.println("order_line DELETE failed");
+                        ex.printStackTrace();
+                    }
+                    
                 }
             }
         }
@@ -416,10 +459,10 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 int idProduct = rsProducts.getInt("id_product");
                 
                 
-                products.add(new Product(idProduct, productName, pricePerDay, discountPerDay));
+                ApplicationMain.products.add(new Product(idProduct, productName, pricePerDay, discountPerDay));
                 
-                Object[] ProductRow = {false, icon, productName, category, keywords, pricePerDayDisplay, discountPerDayDisplay};
-                tableModel.addRow(ProductRow);
+                Object[] productRow = {false, icon, productName, category, keywords, pricePerDayDisplay, discountPerDayDisplay};
+                productsTableModel.addRow(productRow);
             }
             ApplicationMain.stopConnection(con);
         } catch (SQLException ex) {
@@ -465,7 +508,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         setTitle("RentYourStuff");
 
         productsTable.setAutoCreateRowSorter(true);
-        productsTable.setModel(tableModel);
+        productsTable.setModel(productsTableModel);
         tableScrollPane.setViewportView(productsTable);
 
         createOrderButton.setText("Create Order");
@@ -657,7 +700,10 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     }//GEN-LAST:event_productAddButtonActionPerformed
 
     private void createOrderButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createOrderButtonActionPerformed
+        OrderUI.orderTableView();
+//        OrderUI.updateFinalPrice();
         OrderUI.orderUI.setVisible(true);
+        
     }//GEN-LAST:event_createOrderButtonActionPerformed
 
     
@@ -703,7 +749,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     private static javax.swing.JSpinner daysSpinner;
     private static javax.swing.JTextField discountField;
     private javax.swing.JButton invoiceButton;
-    private static javax.swing.JTextField itemsField;
+    public static javax.swing.JTextField itemsField;
     private javax.swing.JList<String> itemsList;
     private javax.swing.JScrollPane itemsScrollPane;
     private javax.swing.JLabel jLabel1;

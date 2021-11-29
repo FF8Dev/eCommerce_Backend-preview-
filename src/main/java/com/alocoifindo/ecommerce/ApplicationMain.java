@@ -6,6 +6,8 @@ package com.alocoifindo.ecommerce;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -14,8 +16,11 @@ import java.sql.SQLException;
 public class ApplicationMain {
 
     static boolean DEBUG = true;
+    static boolean DEBUGdb = false;
     static Customer customer = new Customer();
     static Order order = new Order();
+    static int totalDays;
+    static List<Product> products = new ArrayList<>();
     
     static public Connection startConnection() throws SQLException {
         Connection con = null;
@@ -26,7 +31,7 @@ public class ApplicationMain {
             String user = "root";
             String pass = "pa88#word";
             con = DriverManager.getConnection(urlDB, user, pass);
-            if (DEBUG) {
+            if (DEBUGdb) {
                 System.out.println("Connected to Database");
             }
         } catch (Exception ex) {
@@ -40,7 +45,7 @@ public class ApplicationMain {
                 con.close();
         } finally {
             con = null;
-            if (DEBUG) {
+            if (DEBUGdb) {
                 System.out.println("Database connection exit");
             }
         }   
