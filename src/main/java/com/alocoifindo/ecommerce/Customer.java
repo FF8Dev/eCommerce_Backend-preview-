@@ -1,5 +1,7 @@
 /*
- * GNU General Public License v3.0
+ * Copyright Alocoifindo 2021®
+ * GitHub with ♥︎ for educational purposes
+ * https://alocosite.w3spaces.com
  */
 package com.alocoifindo.ecommerce;
 

@@ -4,8 +4,9 @@
 package com.alocoifindo.ecommerce;
 
 /**
- *
- * @author Alocoifindo
+ * Copyright Alocoifindo 2021®
+ * GitHub with ♥︎ for educational purposes
+ * https://alocosite.w3spaces.com
  */
 public class Product {
     private int id;
