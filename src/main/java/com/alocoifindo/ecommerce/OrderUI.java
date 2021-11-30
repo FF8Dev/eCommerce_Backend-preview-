@@ -28,8 +28,13 @@ public class OrderUI extends javax.swing.JFrame {
 
     static OrderChecklistTableModel orderTableModel = new OrderChecklistTableModel();
     static OrderUI orderUI = new OrderUI();
-    static List<Double> finalPrice = new ArrayList<>();
+    static List<Double> finalPricesBfCDList = new ArrayList<>();
+    static List<Double> finalPricesList = new ArrayList<>();
+    static List<Double> pricePerDayList = new ArrayList<>();
+    static List<Integer> discountPerDayList = new ArrayList<>();
     static double finalPriceSum = 0.0;
+    
+    static int discountCustomer;
     
     /**
      * Creates new form OrderUI
@@ -53,12 +58,13 @@ public class OrderUI extends javax.swing.JFrame {
     }
 
     public static class OrderChecklistTableModel extends DefaultTableModel implements TableModelListener{
-        boolean listedProduct = false;
+        boolean listedProduct = true;
         String priceWithSymbol;
         double pricePerProduct; 
         String discountWithSymbol;
         int discountPerProduct;
         double discountComma;
+        
         
         // add tableListener in this & Column Identifiers
         public OrderChecklistTableModel() {
@@ -100,22 +106,39 @@ public class OrderUI extends javax.swing.JFrame {
                 Vector rowData = (Vector)getDataVector().get(row);
                 rowData.set(0, (boolean)aValue);
                 fireTableCellUpdated(row, column);
-            }  else if(3 == column) {
+            }  else if (3 == column) {
                 Vector rowData = (Vector)getDataVector().get(row);
-                rowData.set(3, (Integer) aValue);
-                fireTableCellUpdated(row, column);
+                int days = (Integer) aValue;
+                rowData.set(3, days);
+                System.out.println("Data entry in Days Cell: " + days);
                 
-//                try {
-//                    Connection con = ApplicationMain.startConnection();
-//                    String updateDaysSQL = "UPDATE IGNORE INTO order_line SET days=? WHERE id_product=?";
-//                    PreparedStatement stmtUpdDay = con.prepareStatement(updateDaysSQL);
-//                    stmtUpdDay.setInt(1, (Integer)aValue);
-//                    stmtUpdDay.setInt(2, row);
-//                } catch (SQLException ex) {
-//                    System.out.println("Cannot Update days in order_line");
-//                    ex.printStackTrace();
-//                }
-            }
+                pricePerProduct = pricePerDayList.get(row);
+                double pricePerMoreDay = (pricePerProduct * ((100.0 - discountPerDayList.get(row)) / 100));
+                double pricePerDays = pricePerProduct + ((days -1) * pricePerMoreDay);
+                double finalPriceWithCD = pricePerDays * ((100.0 - discountCustomer) / 100);
+                
+                System.out.println("Value of product per Day: " + pricePerProduct);
+                System.out.println("Value of product per each MoreDay: " + pricePerMoreDay);
+                
+                String pricePerProductDisplay = (String.format("%.2f", pricePerProduct)) + " €";
+                String pricePerDaysDisplay = (String.format("%.2f", pricePerDays)) + " €";
+                String finalPriceWithCDDisplay = (String.format("%.2f", finalPriceWithCD)) + " €";
+                String priceZeroDisplay = (String.format("%.2f", 00.00)) + " €";
+                
+                if (days > 1) {
+                    rowData.set(5, pricePerDaysDisplay);
+//                    System.out.println("regular price: " + pricePerDayList.get(row) + " + days-1: " + (days-1) + " + finalPriceBfCD: " + (days -1) * finalPricesBfCDList.get(row));
+                    rowData.set(7, finalPriceWithCDDisplay);
+                } else if (days <= 0) {
+                    rowData.set(5, priceZeroDisplay);
+                    rowData.set(7, priceZeroDisplay);
+                } else {
+                    rowData.set(5, pricePerProductDisplay);
+                    rowData.set(7, finalPriceWithCDDisplay);
+                }
+                
+                fireTableCellUpdated(row, column);
+            }                                                                   // Price on days
         }
 
         // Listener of checkbox // (row, 0) = Select checkmark // (row, 2) = Product // (row, 5) = Price //
@@ -128,49 +151,52 @@ public class OrderUI extends javax.swing.JFrame {
                 System.out.println("Order Row changed nº" + row);
             }
             
-            TableModel model = (TableModel)e.getSource();
             // data = checkmark
-            Object datacheck = false;
-            
+            Object datacheck = tableModel.getValueAt(row, 0);;
 
-            try {
-                if (row >= 0 && col >= 0) {
-                    datacheck = tableModel.getValueAt(row, col);
+            if (col == 3) {
 
-                    boolean ishotKeyColEmpty = false;
-                    if (tableModel.getValueAt(row, 0) != null) {
-                        ishotKeyColEmpty = tableModel.getValueAt(row, 0).toString().isEmpty();
-                    }
-                    if (datacheck != null && datacheck.toString().equals("") && !ishotKeyColEmpty) {
-                        tableModel.setValueAt("", row, 0);
-                    }
-                }
-                if (row >=0 && col == 3) {
-                    try {
+                int daysRow = (Integer)tableModel.getValueAt(row, 3);
+                System.out.println("Day uploaded to SQL after tableChanged: " + daysRow);
+
+
+//                        PreparedStatement stmtFindProdId = con.prepareStatement("SELECT id_product, CONCAT(brand, \" \", model_name) AS Product FROM Products WHERE Product=?");
+//                            stmtFindProdId.setString(1, (String)getValueAt(row, 1));
+//                        ResultSet rsFindProdId = stmtFindProdId.executeQuery();
+//                        rsFindProdId.next();
+//                        int productPointer = rsFindProdId.getInt("id_product");
+
+
+//                        int productRow = productPointer;
+
+
+                int productRow = ApplicationMain.productsInOrder.get(row).getId();
+                System.out.println("productsInOrder: " + ApplicationMain.productsInOrder.get(row).getProductName());
+
+                try {
                     Connection con = ApplicationMain.startConnection();
-
-                    // !!! UPDATE row 3 "Days" (daysPerProduct) to form daysPerProduct
+                    // UPDATE row 3 "Days" to form daysPerProduct
                     PreparedStatement stmtUpdDays = con.prepareStatement("UPDATE order_line SET days=? WHERE id_product=?");
-                        System.out.println("Product ID insert into order_line: " + ApplicationMain.products.get(row).getId());
-                        System.out.println("days (tableModel.getValueAt(row, 3): )" + tableModel.getValueAt(row, 3));
-                        System.out.println("order_line id_product ApplicationMain.products.get(row).getId(): )" + ApplicationMain.products.get(row).getId());
-                        
-                        stmtUpdDays.setInt(1, (Integer)tableModel.getValueAt(row, 3));
-                        stmtUpdDays.setInt(2, ApplicationMain.products.get(row).getId());
+
+                        stmtUpdDays.setInt(1, daysRow);
+                        stmtUpdDays.setInt(2, productRow);
+                        System.out.println("id_product update in order_line: " + productRow);
+                        System.out.println("days updated in order_line: " + daysRow);
+
                         stmtUpdDays.executeUpdate();
 
                     ApplicationMain.stopConnection(con);
-                    } catch (SQLException ex) {
-                        System.out.println("order_line INSERT failed");
-                        ex.printStackTrace();
-                    }
+                } catch (SQLException ex) {
+                    System.out.println("order_line INSERT failed");
+                    ex.printStackTrace();
                 }
-            } catch (Exception ex) {
-                ex.printStackTrace();
             }
                     
+            
             // if checkmark true
             if (datacheck.equals(true)) {
+                int daysRow = (Integer)tableModel.getValueAt(row, 3);
+                int productRow = ApplicationMain.productsInOrder.get(row).getId();
 //                // product list add
 //                ApplicationUI.listModel.addElement(model.getValueAt(row, 2)); 
 //                ApplicationUI.itemsField.setText(String.valueOf(ApplicationUI.listModel.getSize()));
@@ -183,43 +209,41 @@ public class OrderUI extends javax.swing.JFrame {
 //                discountWithSymbol = model.getValueAt(row, 6).toString();
 //                discountPerProduct = Integer.parseInt(discountWithSymbol.replaceAll("[^0-9]", ""));
 //                discountComma = (100.0 - discountPerProduct) / 100.0;
-                
-                // INSERTO into SQL ´order_line´ Temp
-                try {
-                    Connection con = ApplicationMain.startConnection();
-                    
-                    // !!! id_order_line not match the order num !!!
-                    PreparedStatement stmtIns = con.prepareStatement("INSERT IGNORE INTO order_line (id_product, id_order, days) VALUES (?, ?, ?)");
-                    System.out.println("Product ID insert into order_line: " + ApplicationMain.products.get(row).getId());
-                        
-                        stmtIns.setInt(1, ApplicationMain.products.get(row).getId());
-                        stmtIns.setInt(2, ApplicationMain.order.getId());
-                        stmtIns.setInt(3, ApplicationMain.totalDays);
-                        stmtIns.executeUpdate();
-                    
-                    ApplicationMain.stopConnection(con);
-                } catch (SQLException ex) {
-                    System.out.println("order_line INSERT failed");
-                    ex.printStackTrace();
-                }
+                if (listedProduct == true) {
+                    // INSERTO into SQL ´order_line´ Temp
+                    try {
+    //                    ApplicationMain.totalDays = (Integer)tableModel.getValueAt(row, 3);
+                        Connection con = ApplicationMain.startConnection();
 
+                        // !!! id_order_line not match the order num !!!
+                        PreparedStatement stmtIns = con.prepareStatement("INSERT IGNORE INTO order_line (id_product, id_order, days) VALUES (?, ?, ?)");
+                        System.out.println("Product ID insert into order_line: " + productRow);
+                        System.out.println("Days Product insert by checkmark=true: " + daysRow);    
+
+                            stmtIns.setInt(1, productRow);
+                            stmtIns.setInt(2, ApplicationMain.order.getId());
+                            stmtIns.setInt(3, daysRow);
+                            stmtIns.executeUpdate();
+
+                        ApplicationMain.stopConnection(con);
+                    } catch (SQLException ex) {
+                        System.out.println("order_line INSERT failed");
+                        ex.printStackTrace();
+                    }
+                    
+                }
 
                 
 //             // add item in pricePerProduct by totalDays for totalPriceField
 //                if (totalDays == 1) {
-//                    finalPrice += pricePerProduct;
-//                    totalPriceField.setText(String.format("%.2f", finalPrice));
+//                    finalPricesList += pricePerProduct;
+//                    totalPriceField.setText(String.format("%.2f", finalPricesList));
 //                } else {
-//                    finalPrice = pricePerProduct + (((pricePerProduct * (totalDays-1)) * discountComma));
-//                    totalPriceField.setText(String.format("%.2f", finalPrice));
+//                    finalPricesList = pricePerProduct + (((pricePerProduct * (totalDays-1)) * discountComma));
+//                    totalPriceField.setText(String.format("%.2f", finalPricesList));
 //                }
-                
 
 
-                // activate remove item values
-                listedProduct = true;
-            
-                
             // if checkmark false !!! edit order_line
             } else if (datacheck.equals(false)) {
 //                // product list remove
@@ -237,14 +261,16 @@ public class OrderUI extends javax.swing.JFrame {
 //                    discountPerProduct = Integer.parseInt(discountWithSymbol.replaceAll("[^0-9]", ""));
 //                    discountComma = (100.0 - discountPerProduct) / 100.0;
                     
+                    int productRow = ApplicationMain.productsInOrder.get(row).getId();
+
                     // DELETE from SQL ´order_line´ Temp
                     try {
                         Connection con = ApplicationMain.startConnection();
 
                         PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
-                        System.out.println("Product ID deleted from order_line: " + ApplicationMain.products.get(row).getId());
+                        System.out.println("Product ID deleted from order_line: " + productRow);
                             
-                            stmtDel.setInt(1, ApplicationMain.products.get(row).getId());
+                            stmtDel.setInt(1, productRow);
                             stmtDel.executeUpdate();
 
                         ApplicationMain.stopConnection(con);
@@ -255,12 +281,13 @@ public class OrderUI extends javax.swing.JFrame {
                     
 //                 // remove item in pricePerProduct by totalDays for totalPriceField
 //                    if (totalDays == 1) {
-//                        finalPrice -= pricePerProduct;
-//                        totalPriceField.setText(String.format("%.2f", finalPrice));
+//                        finalPricesList -= pricePerProduct;
+//                        totalPriceField.setText(String.format("%.2f", finalPricesList));
 //                    } else {
-//                        finalPrice = pricePerProduct - (((pricePerProduct * (totalDays-1)) * discountComma));
-//                        totalPriceField.setText(String.format("%.2f", finalPrice));
+//                        finalPricesList = pricePerProduct - (((pricePerProduct * (totalDays-1)) * discountComma));
+//                        totalPriceField.setText(String.format("%.2f", finalPricesList));
 //                    }
+                    
                 }
             }
         }
@@ -268,15 +295,17 @@ public class OrderUI extends javax.swing.JFrame {
     
     public static void orderTableView() {
         orderTableModel.setRowCount(0);
+        ApplicationMain.productsInOrder.clear();
         try {
             Connection con = ApplicationMain.startConnection();
 
             String selectProductsOrderSQL = "SELECT \n" +
                                             "orders.id_tocustomer,\n" +
                                             "order_line.id_order,\n" +
+                                            "order_line.id_product,\n" +
                                             "CONCAT(brand, \" \", model_name) AS Product, \n" +
                                             "price_per_day, \n" +
-                                            "total_days, \n" +
+                                            "days, \n" +
                                             "discount_per_day, \n" +
                                             "customers.discount\n" +
                                             "FROM Products \n" +
@@ -294,24 +323,28 @@ public class OrderUI extends javax.swing.JFrame {
             
             while (rsProductsOrder.next()) {
                 // Get ResultSet of Products of the Order
+                int idProduct = rsProductsOrder.getInt("id_product");
                 String productName = rsProductsOrder.getString("Product");
-                int days = rsProductsOrder.getInt("total_days");
+                int days = rsProductsOrder.getInt("days");
+                System.out.println("Day retrieved from SQL to Table after SELECT: " + days);
                 
                 // price_per_day
                 double pricePerDay = rsProductsOrder.getDouble("price_per_day");
                 String pricePerDayDisplay = (String.format("%.2f", pricePerDay)) + " €";
+                pricePerDayList.add(pricePerDay);
                 
                 // discount_per_day
                 int discountPerDay = rsProductsOrder.getInt("discount_per_day");
                 String discountPerDayDisplay = discountPerDay + " %";
+                discountPerDayList.add(discountPerDay);
                 
                 // discount_per_customer
-                int discountCustomer = rsProductsOrder.getInt("discount");
+                discountCustomer = rsProductsOrder.getInt("discount");
                 String discountCustomerDisplay = discountCustomer+ " %";
                 
                 // price_per_days (Before Customer Discount) & final_price_per_product
-                double priceBfCD;
-                double finalPricePerProduct;
+                double priceBfCD = 1300.00;
+                double finalPricePerProduct = 14.000;
                 if (days > 1) {
                     priceBfCD = pricePerDay + ((pricePerDay * (days - 1)) * ((100.0 - discountPerDay) / 100));
                     finalPricePerProduct = priceBfCD * ((100.0 - discountCustomer) / 100);
@@ -322,7 +355,7 @@ public class OrderUI extends javax.swing.JFrame {
                 String priceBfCDDisplay = String.format("%.2f", priceBfCD) + " €";
                 String finalPricePerProductDisplay = String.format("%.2f", finalPricePerProduct) + " €";
                 
-                finalPrice.add(finalPricePerProduct);
+                ApplicationMain.productsInOrder.add(new Product(idProduct, productName, pricePerDay, discountPerDay));
                 Object[] orderRow = {true, productName, pricePerDayDisplay, days, discountPerDayDisplay, priceBfCDDisplay, discountCustomerDisplay, finalPricePerProductDisplay};
                 orderTableModel.addRow(orderRow);
                 
@@ -336,13 +369,13 @@ public class OrderUI extends javax.swing.JFrame {
         
     }
     
-    public static void updateFinalPrice() {
-        for (int i=0; i < finalPrice.size(); i++) {
-                finalPriceSum += finalPrice.get(i);
-            }
-        
-        finalPriceField.setText(String.format("%.2f", finalPriceSum));
-    }
+//    public static void updateFinalPrice() {
+//        for (int i=0; i < finalPricesList.size(); i++) {
+//                finalPriceSum += finalPricesList.get(i);
+//            }
+//        
+//        finalPriceField.setText(String.format("%.2f", finalPriceSum));
+//    }
     
     /**
      * This method is called from within the constructor to initialize the form.
