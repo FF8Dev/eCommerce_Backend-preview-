@@ -197,13 +197,19 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             ApplicationMain.totalDays = (int)spinner.getValue();
             
             try {
-            Connection con = ApplicationMain.startConnection();
-            
-            String updateDaysSQL = "UPDATE Orders SET total_days=? WHERE id_order=?";
-            PreparedStatement stmtUpdDay = con.prepareStatement(updateDaysSQL);
-            stmtUpdDay.setInt(1, ApplicationMain.totalDays);
-            stmtUpdDay.setInt(2, idOrder);
-            stmtUpdDay.executeUpdate();
+                Connection con = ApplicationMain.startConnection();
+
+                String updDaysOrderSQL = "UPDATE Orders SET total_days=? WHERE id_order=?";
+                String updDaysOrderLineSQL = "UPDATE order_line SET days=? WHERE id_order=?";
+                PreparedStatement stmtUpdDay = con.prepareStatement(updDaysOrderSQL);
+                stmtUpdDay.setInt(1, ApplicationMain.totalDays);
+                stmtUpdDay.setInt(2, idOrder);
+                stmtUpdDay.executeUpdate();
+                System.out.println("totalDays in Order: " + ApplicationMain.totalDays);
+                PreparedStatement stmtUpdDayLine = con.prepareStatement(updDaysOrderLineSQL);
+                stmtUpdDayLine.setInt(1, ApplicationMain.totalDays);
+                stmtUpdDayLine.setInt(2, idOrder);
+                stmtUpdDayLine.executeUpdate();
             
             } catch (SQLException ex) {
                 System.out.println("Cannot UPDATE total_days in Order");
@@ -373,7 +379,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     
                     // !!! id_order_line not match the order num !!!
                     PreparedStatement stmtIns = con.prepareStatement("INSERT INTO order_line (id_product, id_order, days) VALUES (?, ?, ?);");
-                    System.out.println("Product ID insert into order_line: " + ApplicationMain.products.get(row).getId());
+                    System.out.println("id_product insert into order_line: " + ApplicationMain.products.get(row).getId());
                     
                         stmtIns.setInt(1, ApplicationMain.products.get(row).getId());
                         stmtIns.setInt(2, ApplicationMain.order.getId());

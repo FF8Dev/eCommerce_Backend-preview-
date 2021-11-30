@@ -21,8 +21,9 @@ public class ApplicationMain {
     static boolean DEBUGdb = false;
     static Customer customer = new Customer();
     static Order order = new Order();
-    static int totalDays;
+    static int totalDays = 1;
     static List<Product> products = new ArrayList<>();
+    static List<Product> productsInOrder = new ArrayList<>();
     
     static public Connection startConnection() throws SQLException {
         Connection con = null;
