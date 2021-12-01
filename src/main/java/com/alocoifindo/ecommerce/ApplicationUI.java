@@ -87,7 +87,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     
     @Override
     public void windowClosing(WindowEvent e) {
-        System.out.println("WindowListener method called: windowClosing.");
+        if (ApplicationMain.DEBUGwin) {
+            System.out.println("WindowListener method called: windowClosing.");
+        }
         String tempStatus;
         
         try {
@@ -121,33 +123,45 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     
     @Override
     public void windowClosed(WindowEvent e) {
-        //This will only be seen on standard output.
-        System.out.println("WindowListener method called: windowClosed.");
+        if (ApplicationMain.DEBUGwin) {
+            //This will only be seen on standard output.
+            System.out.println("WindowListener method called: windowClosed.");
+        }
     }
 
     @Override
     public void windowOpened(WindowEvent e) {
-        System.out.println("WindowListener method called: windowOpened.");
+        if (ApplicationMain.DEBUGwin) {
+           System.out.println("WindowListener method called: windowOpened.");
+        }
     }
 
     @Override
     public void windowIconified(WindowEvent e) {
-        System.out.println("WindowListener method called: windowIconified.");
+        if (ApplicationMain.DEBUGwin) {
+            System.out.println("WindowListener method called: windowIconified.");
+        }
     }
 
     @Override
     public void windowDeiconified(WindowEvent e) {
-        System.out.println("WindowListener method called: windowDeiconified.");
+        if (ApplicationMain.DEBUGwin) {
+            System.out.println("WindowListener method called: windowDeiconified.");
+        }
     }
 
     @Override
     public void windowActivated(WindowEvent e) {
-        System.out.println("WindowListener method called: windowActivated.");
+        if (ApplicationMain.DEBUGwin) {
+            System.out.println("WindowListener method called: windowActivated.");
+        }
     }
 
     @Override
     public void windowDeactivated(WindowEvent e) {
-        System.out.println("WindowListener method called: windowDeactivated.");
+        if (ApplicationMain.DEBUGwin) {
+            System.out.println("WindowListener method called: windowDeactivated.");
+        }
     }
 
     private void setOrderId() {

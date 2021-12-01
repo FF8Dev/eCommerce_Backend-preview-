@@ -19,6 +19,7 @@ public class ApplicationMain {
 
     static boolean DEBUG = true;
     static boolean DEBUGdb = false;
+    static boolean DEBUGwin = false;
     static Customer customer = new Customer();
     static Order order = new Order();
     static int totalDays = 1;
