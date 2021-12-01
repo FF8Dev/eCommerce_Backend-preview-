@@ -709,9 +709,6 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
     private void createOrderButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createOrderButtonActionPerformed
         OrderUI.orderTableView();
-//        OrderUI.updateFinalPrice();
-        OrderUI.orderUI.setVisible(true);
-        
     }//GEN-LAST:event_createOrderButtonActionPerformed
 
     
