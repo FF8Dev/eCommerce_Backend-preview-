@@ -1,6 +1,6 @@
 /*
  * Copyright Alocoifindo 2021®
- * GitHub with ♥︎ for educational purposes
+ * GitHub with ♥︎ for sharing purposes
  * https://alocosite.w3spaces.com
  */
 package com.alocoifindo.ecommerce;
