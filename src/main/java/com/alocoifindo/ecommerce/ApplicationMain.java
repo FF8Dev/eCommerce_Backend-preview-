@@ -1,15 +1,23 @@
 /*
  * Copyright Alocoifindo 2021®
- * GitHub with ♥︎ for educational purposes
+ * GitHub with ♥︎ for sharing purposes
  * https://alocosite.w3spaces.com
  */
 package com.alocoifindo.ecommerce;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.KeyStroke;
 
 /**
  *

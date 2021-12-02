@@ -1,12 +1,14 @@
 /*
  * Copyright Alocoifindo 2021®
- * GitHub with ♥︎ for educational purposes
+ * GitHub with ♥︎ for sharing purposes
  * https://alocosite.w3spaces.com
  */
 package com.alocoifindo.ecommerce;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,7 +18,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -35,8 +43,7 @@ public class OrderUI extends javax.swing.JFrame {
 
     static OrderChecklistTableModel orderTableModel = new OrderChecklistTableModel();
     static OrderUI orderUI = new OrderUI();
-    static List<Double> finalPricesBfCDList = new ArrayList<>();
-    static List<Double> finalPricesList = new ArrayList<>();
+    
     static Map<Integer, Double> finalPricesMap = new HashMap<Integer, Double>();
     static int counter = 0;
     static Map<Integer, Double> finalPricesUncheckMap = new HashMap<Integer, Double>();
@@ -52,31 +59,42 @@ public class OrderUI extends javax.swing.JFrame {
     public OrderUI() {
         initComponents();
         setLocationRelativeTo(null);
+
+        orderTable.setRowHeight(25);
+        TableColumnModel columnModel = orderTable.getColumnModel();
+        columnModel.getColumn(0).setPreferredWidth(4);  // Select
+        columnModel.getColumn(1).setPreferredWidth(160); // Product
+        columnModel.getColumn(2).setPreferredWidth(30);// Base Price
+        columnModel.getColumn(3).setPreferredWidth(30); // Days
+        columnModel.getColumn(4).setPreferredWidth(50);// Discount/Day
+        columnModel.getColumn(5).setPreferredWidth(50); // Price on Days
+        columnModel.getColumn(6).setPreferredWidth(30); // Customer Discount
+        columnModel.getColumn(7).setPreferredWidth(50); // Price with Discount
+
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+
+
+        JTableHeader header = orderTable.getTableHeader();
+        header.setDefaultRenderer(new HeaderRenderer(orderTable));
+
+
+        orderTable.getColumnModel().getColumn(3).setCellRenderer( centerRenderer );
+        orderTable.getColumnModel().getColumn(4).setCellRenderer( centerRenderer );
+        orderTable.getColumnModel().getColumn(5).setCellRenderer( centerRenderer );
+        orderTable.getColumnModel().getColumn(6).setCellRenderer( centerRenderer );
+        orderTable.getColumnModel().getColumn(7).setCellRenderer( centerRenderer ); 
         
-            orderTable.setRowHeight(25);
-            TableColumnModel columnModel = orderTable.getColumnModel();
-            columnModel.getColumn(0).setPreferredWidth(4);  // Select
-            columnModel.getColumn(1).setPreferredWidth(160); // Product
-            columnModel.getColumn(2).setPreferredWidth(30);// Base Price
-            columnModel.getColumn(3).setPreferredWidth(30); // Days
-            columnModel.getColumn(4).setPreferredWidth(50);// Discount/Day
-            columnModel.getColumn(5).setPreferredWidth(50); // Price on Days
-            columnModel.getColumn(6).setPreferredWidth(30); // Customer Discount
-            columnModel.getColumn(7).setPreferredWidth(50); // Price with Discount
-            
-            DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-            centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-            
-            
-            JTableHeader header = orderTable.getTableHeader();
-            header.setDefaultRenderer(new HeaderRenderer(orderTable));
-            
-            
-            orderTable.getColumnModel().getColumn(3).setCellRenderer( centerRenderer );
-            orderTable.getColumnModel().getColumn(4).setCellRenderer( centerRenderer );
-            orderTable.getColumnModel().getColumn(5).setCellRenderer( centerRenderer );
-            orderTable.getColumnModel().getColumn(6).setCellRenderer( centerRenderer );
-            orderTable.getColumnModel().getColumn(7).setCellRenderer( centerRenderer );
+        InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap am = getRootPane().getActionMap();
+
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
+        am.put("cancel", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
     }
 
     private static class HeaderRenderer implements TableCellRenderer {
@@ -402,8 +420,6 @@ public class OrderUI extends javax.swing.JFrame {
 
         jScrollPane1 = new javax.swing.JScrollPane();
         orderTable = new javax.swing.JTable();
-        jLabel1 = new javax.swing.JLabel();
-        customerLabel = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         taxesField = new javax.swing.JTextField();
         finalPriceField = new javax.swing.JTextField();
@@ -412,16 +428,15 @@ public class OrderUI extends javax.swing.JFrame {
         cancelButton = new javax.swing.JButton();
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
+        jPanel1 = new javax.swing.JPanel();
+        customerLabel = new javax.swing.JLabel();
+        jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
         orderTable.setModel(orderTableModel);
         orderTable.setToolTipText("");
         jScrollPane1.setViewportView(orderTable);
-
-        jLabel1.setText("Customer:");
-
-        customerLabel.setText(ApplicationUI.tempUsername);
 
         jLabel2.setText("Taxes:");
 
@@ -449,16 +464,35 @@ public class OrderUI extends javax.swing.JFrame {
 
         jLabel5.setText("€");
 
+        customerLabel.setText(ApplicationMain.customer.getUsername());
+
+        jLabel1.setText("Customer:");
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(customerLabel)
+                .addContainerGap())
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(0, 0, 0)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(customerLabel))
+                .addGap(0, 0, 0))
+        );
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(customerLabel)
-                .addGap(264, 264, 264))
             .addGroup(layout.createSequentialGroup()
                 .addGap(12, 12, 12)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
@@ -480,14 +514,16 @@ public class OrderUI extends javax.swing.JFrame {
                         .addComponent(jLabel4))
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 669, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(12, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(24, 24, 24)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(customerLabel))
+                .addGap(18, 18, 18)
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -502,8 +538,10 @@ public class OrderUI extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(invoiceButton)
                     .addComponent(cancelButton))
-                .addContainerGap(15, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
+
+        getAccessibleContext().setAccessibleDescription("");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -561,6 +599,7 @@ public class OrderUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable orderTable;
     private static javax.swing.JTextField taxesField;

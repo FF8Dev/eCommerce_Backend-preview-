@@ -1,6 +1,6 @@
 /*
  * Copyright Alocoifindo 2021®
- * GitHub with ♥︎ for educational purposes
+ * GitHub with ♥︎ for sharing purposes
  * https://alocosite.w3spaces.com
  */
 package com.alocoifindo.ecommerce;
@@ -18,13 +18,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import javax.imageio.ImageIO;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.TableModelEvent;
@@ -43,12 +46,15 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     static List<Customer> customers = new ArrayList<Customer>();
     static String tempUsername = "default_customer";
     
-    static double totalProductPricePerDay = 0;
-    static double totalPrice;
+    static int counter = 0;
+    static Map<Integer, Double> pricePerDayMap = new HashMap<Integer, Double>();
+    static Map<Integer, Integer> discountPerDayMap = new HashMap<Integer, Integer>();
+    static Map<Integer, Boolean> selectedProduct = new HashMap<Integer,Boolean>();
     
     static DefaultComboBoxModel customersComboBoxModel = new DefaultComboBoxModel();
     static ProductsChecklistTableModel productsTableModel = new ProductsChecklistTableModel();
     static DefaultListModel listModel = new DefaultListModel();
+    SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, 0, 90, 1);
     static ApplicationUI appUI = new ApplicationUI();
     
     /**
@@ -58,13 +64,29 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         initComponents();
         setLocationRelativeTo(null);
         
-        ApplicationMain.customer.setId(2);
+        int customerId = ApplicationMain.customer.getId();
+        System.out.println("!!!: " + customerId);
         setOrderId();
         
+        // customerID starts at 2 in admin session
+        if (customerId == 2){
+            customerLabel.setVisible(false);
+            listCustomers();
+            customerSelect.addItemListener(new discountByCustomerListener());
+        } else {
+//            listCustomers(
+            //retrieve comboBox to jLabel
+            customerSelect.setVisible(false);
+            customerSelect.getItemAt(customerId);
+            
+            // !!! retrieve discountField if discount == 0
+            if (ApplicationMain.customer.getDiscount() == 0) {
+                discountLabel.setVisible(false);
+                discountField.setVisible(false);
+            }
+        }
         
-        listCustomers();
-        customerSelect.addItemListener(new discountByCustomerListener());
-        
+        totalPriceField.setText("0.00");
         productsTableView();
         // Table Display Model
         productsTable.setRowHeight(50);
@@ -77,8 +99,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         columnModel.getColumn(5).setPreferredWidth(30); // Price/Day
         columnModel.getColumn(6).setPreferredWidth(50); // Discount/Day
         
-        discountField.setText("0");
-        totalPriceField.setText("0.00");
+        setCustomerDataUI();
         
         daysSpinner.addChangeListener(new daysListener());
         
@@ -188,10 +209,18 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             
             PreparedStatement stmtOrdCreate = con.prepareStatement("INSERT INTO orders VALUES (?, NOW(), 1, null, 'Not Finished', NOW(), ?, ?)");
             stmtOrdCreate.setInt(1, idOrder);
-            stmtOrdCreate.setInt(2, LoginUI.idUser);
+            int userOrder;
+            // if user cames from SignUp
+            if (LoginUI.idUser == 0) {
+                userOrder = ApplicationMain.customer.getId();
+            } else {
+                userOrder = LoginUI.idUser;
+            }
+            stmtOrdCreate.setInt(2, userOrder);
             stmtOrdCreate.setInt(3, ApplicationMain.customer.getId());
             if (ApplicationMain.DEBUG) {
-                System.out.println("idUser: " + LoginUI.idUser);
+                System.out.println("idUser (0 if cames from signUp): " + LoginUI.idUser);
+                System.out.println("idUser by ApplicationMain#customer: " + ApplicationMain.customer.getId());
             }
             stmtOrdCreate.executeUpdate();
             
@@ -204,6 +233,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         ApplicationMain.order.setId(idOrder);
     }
 
+    public static void setCustomerDataUI() {
+        customerLabel.setText(ApplicationMain.customer.getUsername());
+        discountField.setText(String.valueOf(ApplicationMain.customer.getDiscount()));
+    }
+    
     public class daysListener implements ChangeListener {
         @Override
         public void stateChanged(ChangeEvent e) {
@@ -229,6 +263,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 System.out.println("Cannot UPDATE total_days in Order");
                 ex.printStackTrace();
             }
+            updateTotalPrice(ApplicationMain.totalDays);
         }
     }
     
@@ -288,8 +323,8 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     rsCustSelected.next();
                     
                     int tempId = rsCustSelected.getInt("id_user");
-                    
                     int tempDiscount = rsCustSelected.getInt("discount");
+                    
                     
                     if (ApplicationMain.DEBUG) {
                         System.out.println("TempId customer selected: " + tempId);
@@ -312,6 +347,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                       System.out.println("Error while setting Discount percentage OR Update id_toCustomer");
                       ex.printStackTrace(); 
                 }
+                updateTotalPrice(ApplicationMain.totalDays);
            }
         }       
     }
@@ -406,6 +442,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     ex.printStackTrace();
                 }
                 
+                // Final Price set
+                System.out.println("setValueAt Row: " + row);
+                selectedProduct.put(row, true);
+                updateTotalPrice(ApplicationMain.totalDays);
+                
                 // activate remove item values
                 listedProduct = true;
                 
@@ -441,6 +482,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                         ex.printStackTrace();
                     }
                     
+                    // Final Price set
+                    selectedProduct.put(row, false);
+                    updateTotalPrice(ApplicationMain.totalDays);
                 }
             }
         }
@@ -480,6 +524,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 String discountPerDayDisplay = discountPerDay + " %";
                 int idProduct = rsProducts.getInt("id_product");
                 
+                pricePerDayMap.put(counter, pricePerDay);
+                discountPerDayMap.put(counter, discountPerDay);
+                counter++;
                 
                 ApplicationMain.products.add(new Product(idProduct, productName, pricePerDay, discountPerDay));
                 
@@ -491,6 +538,25 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             System.out.println("Problem in SQL Table Represent");
             ex.printStackTrace();
         }
+    }
+    
+    public static void updateTotalPrice(int days) {
+        double finalPriceSum = 0.0;
+        for (int i = 0; i < productsTableModel.getRowCount(); i++) {
+            if (selectedProduct.get(i) != null && selectedProduct.get(i) != false) {
+                double pricePerProduct = pricePerDayMap.get(i);
+                double pricePerMoreDay = (pricePerProduct * ((100.0 - discountPerDayMap.get(i)) / 100));
+                double pricePerDays;
+                if (days == 0) {
+                    pricePerDays = 0.0;
+                } else {
+                    pricePerDays = pricePerProduct + ((days -1) * pricePerMoreDay);
+                }
+                double finalPriceWithCD = pricePerDays * ((100.0 - ApplicationMain.customer.getDiscount()) / 100);
+                finalPriceSum += finalPriceWithCD;
+            }
+        }
+        totalPriceField.setText(String.format("%.2f", finalPriceSum));
     }
     
     /**
@@ -506,28 +572,29 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         tableScrollPane = new javax.swing.JScrollPane();
         productsTable = new javax.swing.JTable();
         createOrderButton = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
+        daysLabel = new javax.swing.JLabel();
         totalPriceField = new javax.swing.JTextField();
-        jLabel2 = new javax.swing.JLabel();
+        totalPriceLabel = new javax.swing.JLabel();
         logoLabel = new javax.swing.JLabel();
         customerSelect = new javax.swing.JComboBox<>();
-        jLabel4 = new javax.swing.JLabel();
+        toLabel = new javax.swing.JLabel();
         itemsScrollPane = new javax.swing.JScrollPane();
         itemsList = new javax.swing.JList<>();
         itemsField = new javax.swing.JTextField();
         discountField = new javax.swing.JTextField();
-        jLabel5 = new javax.swing.JLabel();
-        jLabel6 = new javax.swing.JLabel();
+        discountLabel = new javax.swing.JLabel();
+        itemsLabel = new javax.swing.JLabel();
         userButton = new javax.swing.JButton();
         invoiceButton = new javax.swing.JButton();
         shippingButton = new javax.swing.JButton();
         productAddButton = new javax.swing.JButton();
         daysSpinner = new javax.swing.JSpinner();
+        customerLabel = new javax.swing.JLabel();
 
         jRadioButton1.setText("jRadioButton1");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("RentYourStuff");
+        setTitle("RentMyStuff");
 
         productsTable.setAutoCreateRowSorter(true);
         productsTable.setModel(productsTableModel);
@@ -540,19 +607,22 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             }
         });
 
-        jLabel1.setText("Days");
+        daysLabel.setText("Days");
 
         totalPriceField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
 
-        jLabel2.setText("Total Price");
+        totalPriceLabel.setText("Total Price");
 
         logoLabel.setFont(new java.awt.Font("Birthstone Bounce", 0, 30)); // NOI18N
-        logoLabel.setText("Rent Your Stuff");
+        logoLabel.setText("Rent My Stuff");
 
         customerSelect.setModel(customersComboBoxModel);
         customerSelect.setName("Customer"); // NOI18N
 
-        jLabel4.setText("to:");
+        toLabel.setFont(new java.awt.Font("Birthstone Bounce", 0, 18)); // NOI18N
+        toLabel.setText("to:");
+
+        itemsScrollPane.setPreferredSize(new java.awt.Dimension(275, 147));
 
         itemsList.setModel(listModel);
         itemsScrollPane.setViewportView(itemsList);
@@ -561,9 +631,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         discountField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
 
-        jLabel5.setText("Discount");
+        discountLabel.setText("Discount");
 
-        jLabel6.setText("Items");
+        itemsLabel.setText("Items");
 
         userButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/customer_20.png"))); // NOI18N
         userButton.setBorder(null);
@@ -597,7 +667,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             }
         });
 
+        daysSpinner.setModel(spinnerModel);
         daysSpinner.setValue(1);
+
+        customerLabel.setFont(new java.awt.Font("Birthstone Bounce", 0, 26)); // NOI18N
+        customerLabel.setText(ApplicationMain.customer.getUsername() + "    ");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -606,36 +680,37 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
+                        .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addGap(48, 48, 48)
+                                .addComponent(logoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 171, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(6, 6, 6)
+                                .addComponent(toLabel))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(22, 22, 22)
                                 .addComponent(userButton)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(invoiceButton)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(shippingButton)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(productAddButton))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(18, 18, 18)
-                                .addComponent(logoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 183, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(12, 12, 12)
-                                .addComponent(jLabel4)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(customerSelect, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(productAddButton)))
+                        .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(0, 0, Short.MAX_VALUE)
+                            .addComponent(customerLabel)
+                            .addComponent(customerSelect, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(jLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(discountLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(discountField))
                                 .addGap(58, 58, 58)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(itemsLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(itemsField))
                                 .addGap(34, 34, 34))
-                            .addComponent(itemsScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 247, Short.MAX_VALUE)))
+                            .addComponent(itemsScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 245, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(12, 12, 12)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -643,11 +718,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(layout.createSequentialGroup()
                                         .addGap(5, 5, 5)
-                                        .addComponent(jLabel1))
+                                        .addComponent(daysLabel))
                                     .addComponent(daysSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(totalPriceLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(totalPriceField))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(createOrderButton))
@@ -663,20 +738,22 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(logoLabel)
                             .addComponent(customerSelect, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel4))
+                            .addComponent(toLabel)
+                            .addComponent(customerLabel))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(userButton)
                             .addComponent(invoiceButton)
                             .addComponent(shippingButton)
-                            .addComponent(productAddButton)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(18, 18, 18)
-                        .addComponent(itemsScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(productAddButton))
+                        .addGap(58, 58, 58))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(itemsScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel6)
-                    .addComponent(jLabel5))
+                    .addComponent(itemsLabel)
+                    .addComponent(discountLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(itemsField, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE)
@@ -685,28 +762,26 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 .addComponent(tableScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 292, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(14, 14, 14)
-                        .addComponent(createOrderButton))
-                    .addGroup(layout.createSequentialGroup()
                         .addGap(40, 40, 40)
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(daysLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(totalPriceField, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(daysSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(totalPriceLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(18, 18, 18)
+                        .addComponent(createOrderButton)))
+                .addContainerGap(12, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void userButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_userButtonActionPerformed
-        UserUI.callCustomerData();
-        
-        UserUI.userUI.setVisible(true);
-        
+        UserUI.userUI.setUpButtons();
+        UserUI.userUI.setVisible(true);        
     }//GEN-LAST:event_userButtonActionPerformed
 
     private void invoiceButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_invoiceButtonActionPerformed
@@ -764,25 +839,26 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton createOrderButton;
+    public static javax.swing.JLabel customerLabel;
     private javax.swing.JComboBox<String> customerSelect;
+    private javax.swing.JLabel daysLabel;
     private static javax.swing.JSpinner daysSpinner;
     private static javax.swing.JTextField discountField;
+    private javax.swing.JLabel discountLabel;
     private javax.swing.JButton invoiceButton;
     public static javax.swing.JTextField itemsField;
+    private javax.swing.JLabel itemsLabel;
     private javax.swing.JList<String> itemsList;
     private javax.swing.JScrollPane itemsScrollPane;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
     private javax.swing.JRadioButton jRadioButton1;
     private javax.swing.JLabel logoLabel;
     private javax.swing.JButton productAddButton;
     public static javax.swing.JTable productsTable;
     private javax.swing.JButton shippingButton;
     private javax.swing.JScrollPane tableScrollPane;
+    private javax.swing.JLabel toLabel;
     private static javax.swing.JTextField totalPriceField;
+    private javax.swing.JLabel totalPriceLabel;
     private javax.swing.JButton userButton;
     // End of variables declaration//GEN-END:variables
 }
