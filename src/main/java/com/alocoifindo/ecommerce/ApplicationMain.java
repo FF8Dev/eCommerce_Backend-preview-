@@ -27,7 +27,7 @@ public class ApplicationMain {
 
     static boolean DEBUG = true;
     static boolean DEBUGdb = false;
-    static boolean DEBUGwin = false;
+    static boolean DEBUGwin = true;
     static Customer customer = new Customer();
     static Order order = new Order();
     static int totalDays = 1;
@@ -54,7 +54,7 @@ public class ApplicationMain {
     
     static public void stopConnection(Connection con) throws SQLException {
         try {
-                con.close();
+            con.close();
         } finally {
             con = null;
             if (DEBUGdb) {

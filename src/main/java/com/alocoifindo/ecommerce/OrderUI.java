@@ -88,6 +88,7 @@ public class OrderUI extends javax.swing.JFrame {
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getRootPane().getActionMap();
 
+        // dispose by ESCAPE_KEY
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
         am.put("cancel", new AbstractAction() {
             @Override
@@ -99,23 +100,23 @@ public class OrderUI extends javax.swing.JFrame {
 
     private static class HeaderRenderer implements TableCellRenderer {
 
-    DefaultTableCellRenderer renderer;
-    int HEADER_HEIGHT = 18;
-    
-    public HeaderRenderer(JTable table) {
-        renderer = (DefaultTableCellRenderer)table.getTableHeader().getDefaultRenderer();
-        renderer.setHorizontalAlignment(SwingConstants.CENTER);
-        renderer.setPreferredSize(new Dimension(100,HEADER_HEIGHT));
-    }
+        DefaultTableCellRenderer renderer;
+        int HEADER_HEIGHT = 18;
 
-    @Override
-    public Component getTableCellRendererComponent(
-        JTable table, Object value, boolean isSelected,
-        boolean hasFocus, int row, int col) {
-        return renderer.getTableCellRendererComponent(
-            table, value, isSelected, hasFocus, row, col);
+        public HeaderRenderer(JTable table) {
+            renderer = (DefaultTableCellRenderer)table.getTableHeader().getDefaultRenderer();
+            renderer.setHorizontalAlignment(SwingConstants.CENTER);
+            renderer.setPreferredSize(new Dimension(100,HEADER_HEIGHT));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(
+            JTable table, Object value, boolean isSelected,
+            boolean hasFocus, int row, int col) {
+            return renderer.getTableCellRendererComponent(
+                table, value, isSelected, hasFocus, row, col);
+            }
     }
-}
     
     public static class OrderChecklistTableModel extends DefaultTableModel implements TableModelListener{
         String priceWithSymbol;

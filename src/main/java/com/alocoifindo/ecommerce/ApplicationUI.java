@@ -52,6 +52,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     static Map<Integer, Boolean> selectedProduct = new HashMap<Integer,Boolean>();
     
     static DefaultComboBoxModel customersComboBoxModel = new DefaultComboBoxModel();
+    static discountByCustomerListener comboListener = new discountByCustomerListener();
     static ProductsChecklistTableModel productsTableModel = new ProductsChecklistTableModel();
     static DefaultListModel listModel = new DefaultListModel();
     SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, 0, 90, 1);
@@ -63,6 +64,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     public ApplicationUI() {
         initComponents();
         setLocationRelativeTo(null);
+        addWindowListener(this);
         
         int customerId = ApplicationMain.customer.getId();
         System.out.println("!!!: " + customerId);
@@ -72,7 +74,6 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         if (customerId == 2){
             customerLabel.setVisible(false);
             listCustomers();
-            customerSelect.addItemListener(new discountByCustomerListener());
         } else {
 //            listCustomers(
             //retrieve comboBox to jLabel
@@ -102,8 +103,6 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         setCustomerDataUI();
         
         daysSpinner.addChangeListener(new daysListener());
-        
-        addWindowListener(this);
         }
     
     @Override
@@ -146,42 +145,42 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     public void windowClosed(WindowEvent e) {
         if (ApplicationMain.DEBUGwin) {
             //This will only be seen on standard output.
-            System.out.println("WindowListener method called: windowClosed.");
+            System.out.println("ApplicationUI: windowClosed.");
         }
     }
 
     @Override
     public void windowOpened(WindowEvent e) {
         if (ApplicationMain.DEBUGwin) {
-           System.out.println("WindowListener method called: windowOpened.");
+           System.out.println("ApplicationUI: windowOpened.");
         }
     }
 
     @Override
     public void windowIconified(WindowEvent e) {
         if (ApplicationMain.DEBUGwin) {
-            System.out.println("WindowListener method called: windowIconified.");
+            System.out.println("ApplicationUI: windowIconified.");
         }
     }
 
     @Override
     public void windowDeiconified(WindowEvent e) {
         if (ApplicationMain.DEBUGwin) {
-            System.out.println("WindowListener method called: windowDeiconified.");
+            System.out.println("ApplicationUI: windowDeiconified.");
         }
     }
 
     @Override
     public void windowActivated(WindowEvent e) {
         if (ApplicationMain.DEBUGwin) {
-            System.out.println("WindowListener method called: windowActivated.");
+            System.out.println("ApplicationUI: windowActivated.");
         }
     }
 
     @Override
     public void windowDeactivated(WindowEvent e) {
         if (ApplicationMain.DEBUGwin) {
-            System.out.println("WindowListener method called: windowDeactivated.");
+            System.out.println("ApplicationUI: windowDeactivated.");
         }
     }
 
@@ -232,42 +231,12 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         
         ApplicationMain.order.setId(idOrder);
     }
-
-    public static void setCustomerDataUI() {
-        customerLabel.setText(ApplicationMain.customer.getUsername());
-        discountField.setText(String.valueOf(ApplicationMain.customer.getDiscount()));
-    }
-    
-    public class daysListener implements ChangeListener {
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            JSpinner spinner = (JSpinner) e.getSource();
-            ApplicationMain.totalDays = (int)spinner.getValue();
-            
-            try {
-                Connection con = ApplicationMain.startConnection();
-
-                String updDaysOrderSQL = "UPDATE Orders SET total_days=? WHERE id_order=?";
-                String updDaysOrderLineSQL = "UPDATE order_line SET days=? WHERE id_order=?";
-                PreparedStatement stmtUpdDay = con.prepareStatement(updDaysOrderSQL);
-                stmtUpdDay.setInt(1, ApplicationMain.totalDays);
-                stmtUpdDay.setInt(2, idOrder);
-                stmtUpdDay.executeUpdate();
-                System.out.println("totalDays in Order: " + ApplicationMain.totalDays);
-                PreparedStatement stmtUpdDayLine = con.prepareStatement(updDaysOrderLineSQL);
-                stmtUpdDayLine.setInt(1, ApplicationMain.totalDays);
-                stmtUpdDayLine.setInt(2, idOrder);
-                stmtUpdDayLine.executeUpdate();
-            
-            } catch (SQLException ex) {
-                System.out.println("Cannot UPDATE total_days in Order");
-                ex.printStackTrace();
-            }
-            updateTotalPrice(ApplicationMain.totalDays);
-        }
-    }
     
     public static void listCustomers() {
+        customerSelect.removeAllItems();
+        customerSelect.removeItemListener(comboListener);
+        customersComboBoxModel.removeAllElements();
+        customers.clear();
         
         try {
             Connection con = ApplicationMain.startConnection();
@@ -301,7 +270,19 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         }
     }
     
-    public class discountByCustomerListener implements ItemListener{
+    public static void setCustomerDataUI() {
+        customerLabel.setText(ApplicationMain.customer.getUsername());
+//        customersComboBoxModel.setSelectedItem(ApplicationMain.customer.getUsername());
+//        customerSelect.setSelectedItem(ApplicationMain.customer.getUsername());
+        discountField.setText(String.valueOf(ApplicationMain.customer.getDiscount()));
+        if (LoginUI.privileges) {
+            customerSelect.setSelectedItem(ApplicationMain.customer.getUsername());
+            System.out.println("Selected Item: " + ApplicationMain.customer.getUsername());
+        }
+        customerSelect.addItemListener(comboListener);
+    }
+    
+    public static class discountByCustomerListener implements ItemListener{
         
         Customer listenerCustomer = new Customer();
         @Override
@@ -537,6 +518,35 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         } catch (SQLException ex) {
             System.out.println("Problem in SQL Table Represent");
             ex.printStackTrace();
+        }
+    }
+        
+    public class daysListener implements ChangeListener {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            JSpinner spinner = (JSpinner) e.getSource();
+            ApplicationMain.totalDays = (int)spinner.getValue();
+            
+            try {
+                Connection con = ApplicationMain.startConnection();
+
+                String updDaysOrderSQL = "UPDATE Orders SET total_days=? WHERE id_order=?";
+                String updDaysOrderLineSQL = "UPDATE order_line SET days=? WHERE id_order=?";
+                PreparedStatement stmtUpdDay = con.prepareStatement(updDaysOrderSQL);
+                stmtUpdDay.setInt(1, ApplicationMain.totalDays);
+                stmtUpdDay.setInt(2, idOrder);
+                stmtUpdDay.executeUpdate();
+                System.out.println("totalDays in Order: " + ApplicationMain.totalDays);
+                PreparedStatement stmtUpdDayLine = con.prepareStatement(updDaysOrderLineSQL);
+                stmtUpdDayLine.setInt(1, ApplicationMain.totalDays);
+                stmtUpdDayLine.setInt(2, idOrder);
+                stmtUpdDayLine.executeUpdate();
+            
+            } catch (SQLException ex) {
+                System.out.println("Cannot UPDATE total_days in Order");
+                ex.printStackTrace();
+            }
+            updateTotalPrice(ApplicationMain.totalDays);
         }
     }
     
@@ -780,6 +790,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     }// </editor-fold>//GEN-END:initComponents
 
     private void userButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_userButtonActionPerformed
+        UserUI.emailExistLabel.setVisible(false);
         UserUI.userUI.setUpButtons();
         UserUI.userUI.setVisible(true);        
     }//GEN-LAST:event_userButtonActionPerformed
@@ -840,7 +851,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton createOrderButton;
     public static javax.swing.JLabel customerLabel;
-    private javax.swing.JComboBox<String> customerSelect;
+    public static javax.swing.JComboBox<String> customerSelect;
     private javax.swing.JLabel daysLabel;
     private static javax.swing.JSpinner daysSpinner;
     private static javax.swing.JTextField discountField;
