@@ -421,6 +421,12 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         }
     }
     
+    public static void removeMessages() {
+        usernameExistLabel.setVisible(false);
+        emailExistLabel.setVisible(false);
+        errorFormatLabel.setVisible(false);
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -553,122 +559,128 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
     }// </editor-fold>//GEN-END:initComponents
 
     private void updateButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateButtonActionPerformed
-        String usernameSet = usernameField.getText();
-        String emailSet = emailField.getText();
-        
-        try {
-            Connection con = ApplicationMain.startConnection();
-            System.out.println("getUsername: " + ApplicationMain.customer.getUsername() );
-            // Username change
-            if (!usernameField.getText().equals(ApplicationMain.customer.getUsername())) {
-                if (!usernameCheck(usernameSet)) {
-                    String newUsername = usernameSet;
-                    String changeUsernameSQL = "UPDATE Users SET users.username=? WHERE id_user=?";
-                    try {
-                        PreparedStatement stmtChgUsrnm = con.prepareStatement(changeUsernameSQL);
-                        stmtChgUsrnm.setString(1, newUsername);
-                        stmtChgUsrnm.setInt(2, ApplicationMain.customer.getId());
-                        stmtChgUsrnm.executeUpdate();
-                        updateOK = true;
-                        if (!emailSet.equals(email)) {
-                            emailCheck(emailSet);
-                        }
-                        ApplicationMain.customer.setUsername(newUsername);
-                        System.out.println("New username: " + newUsername);
-                    } catch (SQLException ex) {
-                        System.out.println("Cannot update username in Users");
-                    }
-                }
-            } else if (usernameSet.equals(ApplicationMain.customer.getUsername())) {
-                updateOK = true;
-            }
-            
-            if (!emailSet.equals(email)) {
-                if (!emailCheck(emailField.getText())) {
-                    try {
-                        PreparedStatement stmtUpdEmail = con.prepareStatement("UPDATE Customers SET email=? WHERE id_user=?");
-                        stmtUpdEmail.setString(1, emailField.getText());
-                        stmtUpdEmail.setInt(2, ApplicationMain.customer.getId());
+        //default icon, custom title
+        int n = JOptionPane.showConfirmDialog(userUI, "Would you like to update " + ApplicationMain.customer.getUsername() + "?", "Confirm Update", JOptionPane.YES_NO_OPTION);
+        System.out.println(n);
+        if (n == 0) {
+            String usernameSet = usernameField.getText();
+            String emailSet = emailField.getText();
 
-                        stmtUpdEmail.executeUpdate();
-                        System.out.println("Email updated");
-                        updateOK = true;
-                        if (!usernameSet.equals(ApplicationMain.customer.getUsername())) {
-                            usernameCheck(usernameSet);
+            try {
+                Connection con = ApplicationMain.startConnection();
+                System.out.println("getUsername: " + ApplicationMain.customer.getUsername() );
+                // Username change
+                if (!usernameField.getText().equals(ApplicationMain.customer.getUsername())) {
+                    if (!usernameCheck(usernameSet)) {
+                        String newUsername = usernameSet;
+                        String changeUsernameSQL = "UPDATE Users SET users.username=? WHERE id_user=?";
+                        try {
+                            PreparedStatement stmtChgUsrnm = con.prepareStatement(changeUsernameSQL);
+                            stmtChgUsrnm.setString(1, newUsername);
+                            stmtChgUsrnm.setInt(2, ApplicationMain.customer.getId());
+                            stmtChgUsrnm.executeUpdate();
+                            updateOK = true;
+                            if (!emailSet.equals(email)) {
+                                emailCheck(emailSet);
+                            }
+                            ApplicationMain.customer.setUsername(newUsername);
+                            System.out.println("New username: " + newUsername);
+                        } catch (SQLException ex) {
+                            System.out.println("Cannot update username in Users");
                         }
+                    }
+                } else if (usernameSet.equals(ApplicationMain.customer.getUsername())) {
+                    updateOK = true;
+                }
+
+                if (!emailSet.equals(email)) {
+                    if (!emailCheck(emailField.getText())) {
+                        try {
+                            PreparedStatement stmtUpdEmail = con.prepareStatement("UPDATE Customers SET email=? WHERE id_user=?");
+                            stmtUpdEmail.setString(1, emailField.getText());
+                            stmtUpdEmail.setInt(2, ApplicationMain.customer.getId());
+
+                            stmtUpdEmail.executeUpdate();
+                            System.out.println("Email updated");
+                            updateOK = true;
+                            if (!usernameSet.equals(ApplicationMain.customer.getUsername())) {
+                                usernameCheck(usernameSet);
+                            }
+                        } catch (SQLIntegrityConstraintViolationException ice) {
+                            System.out.println("Email exists - FATAL ERROR");
+                            emailExistLabel.setVisible(true);
+                        } catch (SQLException ex) {
+                            System.out.println("Email not uploaded");
+                            ex.printStackTrace();
+                        }
+                    }
+                } 
+
+                if (!firstnameField.getText().equals(firstname) || !lastnameField.getText().equals(lastname)
+                    || !addressField.getText().equals(addressLine) || !cityField.getText().equals(city)
+                    || !postalcodeField.getText().equals(String.format("%05d", postalcode)) || !telephoneField.getText().equals(String.valueOf(telephone))
+                    || !discountField.getText().equals(String.valueOf(discount))) {
+                    updateOK = false;
+                    // UPDATE Customers
+                    String updateCustomerSQL = "UPDATE Customers SET firstname=?, lastname=?, address_line=?, city=?, postalcode=?, telephone=?, discount=?, last_update=NOW() WHERE id_user=?";
+                    try {
+                        PreparedStatement stmtUpdCustomer = con.prepareStatement(updateCustomerSQL);
+                        stmtUpdCustomer.setString(1, firstnameField.getText());
+                        stmtUpdCustomer.setString(2, lastnameField.getText());
+                        stmtUpdCustomer.setString(3, addressField.getText());
+                        stmtUpdCustomer.setString(4, cityField.getText());
+                        if (postalcodeField.getText().equals("")) {
+                            stmtUpdCustomer.setInt(5, 0);
+                        } else {
+                            stmtUpdCustomer.setInt(5, Integer.parseInt(postalcodeField.getText()));
+                        }
+                        if (telephoneField.getText().equals("")) {
+                            stmtUpdCustomer.setInt(6, 0);
+                        } else {
+                            stmtUpdCustomer.setInt(6, Integer.parseInt(telephoneField.getText()));
+                        }
+                        if (LoginUI.privileges == true) {
+                            int newDiscount = Integer.parseInt(discountField.getText());
+                            stmtUpdCustomer.setInt(7, newDiscount);
+                            ApplicationMain.customer.setDiscount(newDiscount);
+                        } else {
+                            stmtUpdCustomer.setInt(7, ApplicationMain.customer.getDiscount());
+                        }
+
+                        // WHERE id_user is Customer selected
+                        stmtUpdCustomer.setInt(8, ApplicationMain.customer.getId());
+
+                        stmtUpdCustomer.executeUpdate();
+                        System.out.println("Data updated");
+
+                        ApplicationMain.stopConnection(con);
+                        updateOK = true;
+                        if (!usernameSet.equals(ApplicationMain.customer.getUsername()) || !emailSet.equals(email)) {
+                            usernameCheck(usernameField.getText());
+                            emailCheck(emailField.getText());
+                        }
+                    } catch (NumberFormatException ex) {
+                        System.out.println("Cannot update customer data");
+                        errorFormatLabel.setVisible(true);
                     } catch (SQLIntegrityConstraintViolationException ice) {
                         System.out.println("Email exists - FATAL ERROR");
                         emailExistLabel.setVisible(true);
                     } catch (SQLException ex) {
-                        System.out.println("Email not uploaded");
+                        System.out.println("Data not uploaded");
                         ex.printStackTrace();
                     }
                 }
-            } 
-            
-            if (!firstnameField.getText().equals(firstname) || !lastnameField.getText().equals(lastname)
-                || !addressField.getText().equals(addressLine) || !cityField.getText().equals(city)
-                || !postalcodeField.getText().equals(String.format("%05d", postalcode)) || !telephoneField.getText().equals(String.valueOf(telephone))
-                || !discountField.getText().equals(String.valueOf(discount))) {
-                // UPDATE Customers
-                String updateCustomerSQL = "UPDATE Customers SET firstname=?, lastname=?, address_line=?, city=?, postalcode=?, telephone=?, discount=?, last_update=NOW() WHERE id_user=?";
-                try {
-                    PreparedStatement stmtUpdCustomer = con.prepareStatement(updateCustomerSQL);
-                    stmtUpdCustomer.setString(1, firstnameField.getText());
-                    stmtUpdCustomer.setString(2, lastnameField.getText());
-                    stmtUpdCustomer.setString(3, addressField.getText());
-                    stmtUpdCustomer.setString(4, cityField.getText());
-                    if (postalcodeField.getText().equals("")) {
-                        stmtUpdCustomer.setInt(5, 0);
-                    } else {
-                        stmtUpdCustomer.setInt(5, Integer.parseInt(postalcodeField.getText()));
-                    }
-                    if (postalcodeField.getText().equals("")) {
-                        stmtUpdCustomer.setInt(6, 0);
-                    } else {
-                        stmtUpdCustomer.setInt(6, Integer.parseInt(telephoneField.getText()));
-                    }
-                    if (LoginUI.privileges == true) {
-                        int newDiscount = Integer.parseInt(discountField.getText());
-                        stmtUpdCustomer.setInt(7, newDiscount);
-                        ApplicationMain.customer.setDiscount(newDiscount);
-                    } else {
-                        stmtUpdCustomer.setInt(7, ApplicationMain.customer.getDiscount());
-                    }
-
-                    // WHERE id_user is Customer selected
-                    stmtUpdCustomer.setInt(8, ApplicationMain.customer.getId());
-
-                    stmtUpdCustomer.executeUpdate();
-                    System.out.println("Data updated");
-
-                    ApplicationMain.stopConnection(con);
-                    updateOK = true;
-                    if (!usernameSet.equals(ApplicationMain.customer.getUsername()) || !emailSet.equals(email)) {
-                        usernameCheck(usernameField.getText());
-                        emailCheck(emailField.getText());
-                    }
-                } catch (NumberFormatException ex) {
-                    System.out.println("Cannot update customer data");
-                    errorFormatLabel.setVisible(true);
-                } catch (SQLIntegrityConstraintViolationException ice) {
-                    System.out.println("Email exists - FATAL ERROR");
-                    emailExistLabel.setVisible(true);
-                } catch (SQLException ex) {
-                    System.out.println("Data not uploaded");
-                    ex.printStackTrace();
-                }
+            } catch (SQLException ex) {
+                System.out.println("Data not uploaded");
+                ex.printStackTrace();
             }
-        } catch (SQLException ex) {
-            System.out.println("Data not uploaded");
-            ex.printStackTrace();
-        }
-        
-        if (updateOK) {
-            // Update appUI Data
-            ApplicationUI.listCustomers();
-            ApplicationUI.setCustomerDataUI();
-            setVisible(false);
+
+            if (updateOK) {
+                // Update appUI Data
+                ApplicationUI.listCustomers();
+                ApplicationUI.setCustomerDataUI();
+                setVisible(false);
+            }
         }
     }//GEN-LAST:event_updateButtonActionPerformed
 
@@ -708,13 +720,13 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                     Connection con = ApplicationMain.startConnection();
                     con.setAutoCommit(false);
 
-                    // if comes fromLoginUI = Find last ID for INSERT NEW USER
+                    // if comes from SignUp = Find last ID for INSERT NEW USER
                     if (LoginUI.fromLogin) {
                         PreparedStatement lastId_stmt = con.prepareStatement("SELECT max(id_user) FROM Users");
                         ResultSet rsMaxId = lastId_stmt.executeQuery();
                         rsMaxId.next();
                         id_user_new = rsMaxId.getInt(1) + 1;
-//                        id_userCreator = id_user_new;
+                        id_userCreator = id_user_new;
 
                     // Find ID from CURRENT USER CREATOR
                     } else {

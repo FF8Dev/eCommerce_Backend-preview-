@@ -46,13 +46,14 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     static List<Customer> customers = new ArrayList<Customer>();
     static String tempUsername = "default_customer";
     
+    static boolean updatedDiscount;
     static int counter = 0;
     static Map<Integer, Double> pricePerDayMap = new HashMap<Integer, Double>();
     static Map<Integer, Integer> discountPerDayMap = new HashMap<Integer, Integer>();
     static Map<Integer, Boolean> selectedProduct = new HashMap<Integer,Boolean>();
     
     static DefaultComboBoxModel customersComboBoxModel = new DefaultComboBoxModel();
-    static discountByCustomerListener comboListener = new discountByCustomerListener();
+    static customerListener comboListener = new customerListener();
     static ProductsChecklistTableModel productsTableModel = new ProductsChecklistTableModel();
     static DefaultListModel listModel = new DefaultListModel();
     SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, 0, 90, 1);
@@ -282,9 +283,8 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         customerSelect.addItemListener(comboListener);
     }
     
-    public static class discountByCustomerListener implements ItemListener{
+    public static class customerListener implements ItemListener{
         
-        Customer listenerCustomer = new Customer();
         @Override
         public void itemStateChanged(ItemEvent event) {
             if (event.getStateChange() == ItemEvent.SELECTED) {
@@ -323,6 +323,19 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     ApplicationMain.customer.setDiscount(tempDiscount);
                     discountField.setText(String.valueOf(tempDiscount));
                     
+                    //update product prices on table by customer
+                    for (int i = 0; i < productsTable.getRowCount(); i++) {
+                        double pricePerProduct = pricePerDayMap.get(i);
+                        double priceWDiscount = pricePerProduct * ((100.0 - ApplicationMain.customer.getDiscount()) / 100);
+
+                        String priceWDiscountSymbol = (String.format("%.2f", priceWDiscount)) + " €";
+                        System.out.println("PriceWDiscountSymbol(" + i + "): " + priceWDiscountSymbol);
+                        // to not update order_line if discount modified
+                        updatedDiscount = true;
+                        productsTableModel.setValueAt(priceWDiscountSymbol, i, 5);    
+                    } 
+
+                    
                     ApplicationMain.stopConnection(con);
                 } catch (SQLException ex) {
                       System.out.println("Error while setting Discount percentage OR Update id_toCustomer");
@@ -338,6 +351,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         boolean listedProduct = false;
         String priceWithSymbol;
         double pricePerProduct; 
+        double priceWDiscount;
         String discountWithSymbol;
         int discountPerProduct;
         double discountComma;
@@ -373,7 +387,14 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
           if (aValue instanceof Boolean && column == 0) {
             Vector rowData = (Vector)getDataVector().get(row);
             rowData.set(0, (boolean)aValue);
+            // to update order_line if selected
+            updatedDiscount = false;
             fireTableCellUpdated(row, column);
+            
+          } if (column == 5) {
+              Vector rowData = (Vector)getDataVector().get(row);
+              rowData.set(5, (String)aValue);
+              fireTableCellUpdated(row, column);
           }
         }
 
@@ -381,91 +402,95 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         @Override
         public void tableChanged(TableModelEvent e) {
             int row = e.getFirstRow();
+            TableModel model = (TableModel)e.getSource();
+            
             if (ApplicationMain.DEBUG) {
                 System.out.println("Row ProductTable changed nº" + row);
             }
-            
-            TableModel model = (TableModel)e.getSource();
+
             // data = checkmark
             Object data = model.getValueAt(row, 0);
 
-            // if checkmark true
-            if (data.equals(true)) {
-                // product list add
-                listModel.addElement(model.getValueAt(row, 2)); 
-                itemsField.setText(String.valueOf(listModel.getSize()));
-                
-                // total pricePerProduct add
-                priceWithSymbol = model.getValueAt(row, 5).toString();
-                pricePerProduct = Double.parseDouble(priceWithSymbol.replaceAll("[^0-9.]", ""));
-                
-                // total discountPerProduct add
-                discountWithSymbol = model.getValueAt(row, 6).toString();
-                discountPerProduct = Integer.parseInt(discountWithSymbol.replaceAll("[^0-9]", ""));
-                discountComma = (100.0 - discountPerProduct) / 100.0;
-                
-                // INSERTO into SQL ´order_line´ Temp
-                try {
-                    Connection con = ApplicationMain.startConnection();
-                    
-                    // !!! id_order_line not match the order num !!!
-                    PreparedStatement stmtIns = con.prepareStatement("INSERT INTO order_line (id_product, id_order, days) VALUES (?, ?, ?);");
-                    System.out.println("id_product insert into order_line: " + ApplicationMain.products.get(row).getId());
-                    
-                        stmtIns.setInt(1, ApplicationMain.products.get(row).getId());
-                        stmtIns.setInt(2, ApplicationMain.order.getId());
-                        stmtIns.setInt(3, ApplicationMain.totalDays);
-                        stmtIns.executeUpdate();
-                    
-                    ApplicationMain.stopConnection(con);
-                } catch (SQLException ex) {
-                    System.out.println("order_line INSERT failed");
-                    ex.printStackTrace();
-                }
-                
-                // Final Price set
-                System.out.println("setValueAt Row: " + row);
-                selectedProduct.put(row, true);
-                updateTotalPrice(ApplicationMain.totalDays);
-                
-                // activate remove item values
-                listedProduct = true;
-                
-            // if checkmark false
-            } else if (data.equals(false)) {
-                // product list remove
-                listModel.removeElement(model.getValueAt(row, 2));
-                itemsField.setText(String.valueOf(listModel.getSize()));
-                
-                // if already placed as item
-                if (listedProduct == true) {
-                    // total pricePerProduct remove
+            // if comes from checkmark only
+            if (!updatedDiscount) {
+                // if checkmark true
+                if (data.equals(true)) {
+                    // product list add
+                    listModel.addElement(model.getValueAt(row, 2)); 
+                    itemsField.setText(String.valueOf(listModel.getSize()));
+
+                    // total pricePerProduct add
                     priceWithSymbol = model.getValueAt(row, 5).toString();
                     pricePerProduct = Double.parseDouble(priceWithSymbol.replaceAll("[^0-9.]", ""));
-                    
-                    // total discountPerProduct remove
+
+                    // total discountPerProduct add
                     discountWithSymbol = model.getValueAt(row, 6).toString();
                     discountPerProduct = Integer.parseInt(discountWithSymbol.replaceAll("[^0-9]", ""));
                     discountComma = (100.0 - discountPerProduct) / 100.0;
-                    
-                    // DELETE from SQL ´order_line´ Temp
+
+                    // INSERTO into SQL ´order_line´ Temp
                     try {
                         Connection con = ApplicationMain.startConnection();
 
-                        PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
-                        System.out.println("Product ID deleted from order_line: " + ApplicationMain.products.get(row).getId());
-                        stmtDel.setInt(1, ApplicationMain.products.get(row).getId());
-                        stmtDel.executeUpdate();
+                        // !!! id_order_line not match the order num !!!
+                        PreparedStatement stmtIns = con.prepareStatement("INSERT INTO order_line (id_product, id_order, days) VALUES (?, ?, ?);");
+                        System.out.println("id_product insert into order_line: " + ApplicationMain.products.get(row).getId());
+
+                            stmtIns.setInt(1, ApplicationMain.products.get(row).getId());
+                            stmtIns.setInt(2, ApplicationMain.order.getId());
+                            stmtIns.setInt(3, ApplicationMain.totalDays);
+                            stmtIns.executeUpdate();
 
                         ApplicationMain.stopConnection(con);
                     } catch (SQLException ex) {
-                        System.out.println("order_line DELETE failed");
+                        System.out.println("order_line INSERT failed");
                         ex.printStackTrace();
                     }
-                    
+
                     // Final Price set
-                    selectedProduct.put(row, false);
+                    System.out.println("setValueAt Row: " + row);
+                    selectedProduct.put(row, true);
                     updateTotalPrice(ApplicationMain.totalDays);
+
+                    // activate remove item values
+                    listedProduct = true;
+
+                // if checkmark false
+                } else if (data.equals(false)) {
+                    // product list remove
+                    listModel.removeElement(model.getValueAt(row, 2));
+                    itemsField.setText(String.valueOf(listModel.getSize()));
+
+                    // if already placed as item
+                    if (listedProduct == true) {
+                        // total pricePerProduct remove
+                        priceWithSymbol = model.getValueAt(row, 5).toString();
+                        pricePerProduct = Double.parseDouble(priceWithSymbol.replaceAll("[^0-9.]", ""));
+
+                        // total discountPerProduct remove
+                        discountWithSymbol = model.getValueAt(row, 6).toString();
+                        discountPerProduct = Integer.parseInt(discountWithSymbol.replaceAll("[^0-9]", ""));
+                        discountComma = (100.0 - discountPerProduct) / 100.0;
+
+                        // DELETE from SQL ´order_line´ Temp
+                        try {
+                            Connection con = ApplicationMain.startConnection();
+
+                            PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
+                            System.out.println("Product ID deleted from order_line: " + ApplicationMain.products.get(row).getId());
+                            stmtDel.setInt(1, ApplicationMain.products.get(row).getId());
+                            stmtDel.executeUpdate();
+
+                            ApplicationMain.stopConnection(con);
+                        } catch (SQLException ex) {
+                            System.out.println("order_line DELETE failed");
+                            ex.printStackTrace();
+                        }
+
+                        // Final Price set
+                        selectedProduct.put(row, false);
+                        updateTotalPrice(ApplicationMain.totalDays);
+                    }
                 }
             }
         }
@@ -515,6 +540,18 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 productsTableModel.addRow(productRow);
             }
             ApplicationMain.stopConnection(con);
+            
+            // Apply discount prices by customer
+            for (int i = 0; i < productsTable.getRowCount(); i++) {
+                double pricePerProduct = pricePerDayMap.get(i);
+                double priceWDiscount = pricePerProduct * ((100.0 - ApplicationMain.customer.getDiscount()) / 100);
+
+                String priceWDiscountSymbol = (String.format("%.2f", priceWDiscount)) + " €";
+                System.out.println("PriceWDiscountSymbol(" + i + "): " + priceWDiscountSymbol);
+                // to not update order_line if discount modified
+                updatedDiscount = true;
+                productsTableModel.setValueAt(priceWDiscountSymbol, i, 5);    
+            } 
         } catch (SQLException ex) {
             System.out.println("Problem in SQL Table Represent");
             ex.printStackTrace();
@@ -567,6 +604,18 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             }
         }
         totalPriceField.setText(String.format("%.2f", finalPriceSum));
+        
+        // update Order amount
+        try {
+            Connection con = ApplicationMain.startConnection();
+            PreparedStatement stmtAmnt = con.prepareStatement("UPDATE Orders SET amount=? WHERE id_order=?");
+            stmtAmnt.setDouble(1, finalPriceSum);
+            stmtAmnt.setInt(2, idOrder);
+            stmtAmnt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Cannot update total amount of the Order");
+        }
     }
     
     /**
@@ -790,7 +839,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     }// </editor-fold>//GEN-END:initComponents
 
     private void userButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_userButtonActionPerformed
-        UserUI.emailExistLabel.setVisible(false);
+        UserUI.removeMessages();
         UserUI.userUI.setUpButtons();
         UserUI.userUI.setVisible(true);        
     }//GEN-LAST:event_userButtonActionPerformed

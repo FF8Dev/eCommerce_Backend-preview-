@@ -135,16 +135,16 @@ public class OrderUI extends javax.swing.JFrame {
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {
-          Class clazz = String.class;
-          switch (columnIndex) {
-            case 0:
-                clazz = Boolean.class;
-                break;
-          case 3:
-            clazz = Integer.class;
-            break;
-          }
-          return clazz;
+            Class clazz = String.class;
+            switch (columnIndex) {
+                case 0:
+                    clazz = Boolean.class;
+                    break;
+                case 3:
+                    clazz = Integer.class;
+                    break;
+            }
+            return clazz;
         }
 
         @Override
