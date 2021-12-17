@@ -12,13 +12,15 @@ package com.alocoifindo.ecommerce;
  */
 public class Product {
     private int id;
+    private String idNamed;
     private String productName;
     private byte image;
     private double pricePerDay;
     private int discountPerDay;
 
-    public Product(int id, String productName, double pricePerDay, int discountPerDay) {
+    public Product(int id, String idNamed, String productName, double pricePerDay, int discountPerDay) {
         this.id = id;
+        this.idNamed = idNamed;
         this.productName = productName;
         this.pricePerDay = pricePerDay;
         this.discountPerDay = discountPerDay;
@@ -32,6 +34,14 @@ public class Product {
         this.id = id;
     }
 
+    public String getIdNamed() {
+        return idNamed;
+    }
+
+    public void setIdNamed(String idNamed) {
+        this.idNamed = idNamed;
+    }
+
     public String getProductName() {
         return productName;
     }
@@ -40,6 +50,14 @@ public class Product {
         this.productName = productName;
     }
 
+    public byte getImage() {
+        return image;
+    }
+
+    public void setImage(byte image) {
+        this.image = image;
+    }
+    
     public double getPrice() {
         return pricePerDay;
     }

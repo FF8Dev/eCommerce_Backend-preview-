@@ -5,6 +5,9 @@
  */
 package com.alocoifindo.ecommerce;
 
+import java.time.LocalDate;
+import java.util.Date;
+
 /**
  *
  * @author facundoferreyra
@@ -13,6 +16,8 @@ public class Order {
     int id;
     int orderLine;
     int days;
+    LocalDate startDate;
+    LocalDate endDate;
     double amount;
     String creationDate;
     String shipmentStatus;
@@ -45,6 +50,24 @@ public class Order {
     public void setDays(int days) {
         this.days = days;
     }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+    
+    
 
     public double getAmount() {
         return amount;

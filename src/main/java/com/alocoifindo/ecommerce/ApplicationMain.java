@@ -5,6 +5,9 @@
  */
 package com.alocoifindo.ecommerce;
 
+import com.github.lgooddatepicker.components.DatePicker;
+import com.github.lgooddatepicker.zinternaltools.CustomPopup;
+import com.github.lgooddatepicker.zinternaltools.CustomPopup.CustomPopupCloseListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.sql.Connection;
@@ -15,9 +18,14 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 /**
  *
@@ -33,7 +41,10 @@ public class ApplicationMain {
     static int totalDays = 1;
     static List<Product> products = new ArrayList<>();
     static List<Product> productsInOrder = new ArrayList<>();
-    
+
+    private JTextField dateTextField;
+    private JButton toggleCalendarButton;
+
     static public Connection startConnection() throws SQLException {
         Connection con = null;
         try {
@@ -48,10 +59,10 @@ public class ApplicationMain {
             }
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
-            }
+        }
         return con;
     }
-    
+
     static public void stopConnection(Connection con) throws SQLException {
         try {
             con.close();
@@ -60,14 +71,14 @@ public class ApplicationMain {
             if (DEBUGdb) {
                 System.out.println("Database connection exit");
             }
-        }   
+        }
     }
-    
+
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
         LoginUI.loginUI.main(args);
     }
-    
+
 }

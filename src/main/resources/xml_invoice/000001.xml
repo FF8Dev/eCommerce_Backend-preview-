@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<invoice id="000001">
+    <date>2021/12/13</date>
+    <invoice-to>
+        <name></name>
+        <address-line/>
+        <city/>
+        <postalcode>0</postalcode>
+        <country>Spain</country>
+        <email/>
+    </invoice-to>
+    <invoice-from>
+        <name>Facundo Ferreyra</name>
+        <address-line>C. de Sumatra 88</address-line>
+        <city>Rubí</city>
+        <postalcode>08191</postalcode>
+        <country>Spain</country>
+        <email>alocoifindo@gmail.com</email>
+    </invoice-from>
+</invoice>

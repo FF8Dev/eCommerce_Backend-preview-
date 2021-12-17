@@ -230,11 +230,32 @@ public class LoginUI extends javax.swing.JFrame {
                     ApplicationMain.customer.setId(2);
                     ApplicationMain.customer.setUsername("default_customer");
                     ApplicationMain.customer.setDiscount(0);
+                    ApplicationMain.customer.setFirstname("");
+                    ApplicationMain.customer.setLastname("");
+                    ApplicationMain.customer.setAddressLine("");
+                    ApplicationMain.customer.setCity("");
+                    ApplicationMain.customer.setPostalcode(0);
+                    ApplicationMain.customer.setTelephone(0);
+                    ApplicationMain.customer.setEmail("");
                 } else {
                     ApplicationMain.customer.setId(idUser);
                     ApplicationMain.customer.setUsername(username);
                     ApplicationMain.customer.setDiscount(discount);
-                    // !!! use SELECT for retrieve data for use in UserUI
+                    // SELECT for retrieve Customer data
+                    PreparedStatement stmtCust = con.prepareStatement("SELECT * FROM Customers WHERE id_user=?");
+                    stmtCust.setInt(1, idUser);
+                    ResultSet rsCust = stmtCust.executeQuery();
+                    if (rsCust.next()) {
+                        ApplicationMain.customer.setFirstname(rsCust.getString("firstname"));
+                        ApplicationMain.customer.setLastname(rsCust.getString("lastname"));
+                        ApplicationMain.customer.setAddressLine(rsCust.getString("address_line"));
+                        ApplicationMain.customer.setCity(rsCust.getString("city"));
+                        ApplicationMain.customer.setPostalcode(rsCust.getInt("postalcode"));
+                        ApplicationMain.customer.setTelephone(rsCust.getInt("telephone"));
+                        ApplicationMain.customer.setEmail(rsCust.getString("email"));
+                    } else {
+                        System.out.println("Customer info not retrived");
+                    }
                 }
                 
                 

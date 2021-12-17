@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<invoice id="000555">  
+    <date>2021/12/13</date>      
+    <invoice-to>
+        <name>Pippo</name>
+        <address-line>C. La Santa 121</address-line>
+        <city>Sant Pedor</city>
+        <postalcode>08188</postalcode>
+        <country>Spain</country>
+        <email>pippo@losabe.com</email>
+    </invoice-to>
+    <invoice-from>
+        <nif>X3874773D</nif>
+        <name>Alocoifindo</name>
+        <address-line>C. de Badajoz 12, BJ 1</address-line>
+        <city>Rubí</city>
+        <postalcode>08191</postalcode>
+        <country>Spain</country>
+        <email>alocoifindo@gmail.com</email>
+        <telephone>626544440</telephone>
+    </invoice-from>
+    <order>
+        <product>
+            <id>CM-002-1</id>
+            <product-name>Olympus AM-100</product-name>
+            <price-per-day>10</price-per-day>
+            <discount-per-day>50</discount-per-day>
+            <days>2</days>
+            <unit-price>15</unit-price>
+            <discount>35</discount>
+            <total-price>9.75</total-price>
+        </product>
+        <product>
+            <id>TR-001-1</id>
+            <product-name>Manfrotto PIXI</product-name>
+            <price-per-day>5</price-per-day>
+            <discount-per-day>80</discount-per-day>
+            <days>2</days>
+            <unit-price>6</unit-price>
+            <discount>35</discount>
+            <total-price>3.90</total-price>
+        </product>
+    </order>
+    <taxes-applied type="21">2,87</taxes-applied>
+    <total-invoice-price>13.65</total-invoice-price>
+    <payment-method>Cash</payment-method>
+    <notes>Deliver to Pippo with ball.</notes>
+</invoice>

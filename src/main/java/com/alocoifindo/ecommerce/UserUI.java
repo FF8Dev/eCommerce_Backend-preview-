@@ -561,7 +561,9 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
     private void updateButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateButtonActionPerformed
         //default icon, custom title
         int n = JOptionPane.showConfirmDialog(userUI, "Would you like to update " + ApplicationMain.customer.getUsername() + "?", "Confirm Update", JOptionPane.YES_NO_OPTION);
-        System.out.println(n);
+        if (ApplicationMain.DEBUG) {
+            System.out.println("option decided ('0' means yes): " + n);
+        }
         if (n == 0) {
             String usernameSet = usernameField.getText();
             String emailSet = emailField.getText();
