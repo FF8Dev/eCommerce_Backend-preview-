@@ -5,27 +5,15 @@
  */
 package com.alocoifindo.ecommerce;
 
-import com.github.lgooddatepicker.components.DatePicker;
-import com.github.lgooddatepicker.zinternaltools.CustomPopup;
-import com.github.lgooddatepicker.zinternaltools.CustomPopup.CustomPopupCloseListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.AbstractAction;
-import javax.swing.ActionMap;
-import javax.swing.InputMap;
 import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.KeyStroke;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 /**
  *
@@ -33,9 +21,9 @@ import javax.swing.event.DocumentListener;
  */
 public class ApplicationMain {
 
-    static boolean DEBUG = true;
+    static boolean DEBUG = false;
     static boolean DEBUGdb = false;
-    static boolean DEBUGwin = true;
+    static boolean DEBUGwin = false;
     static Customer customer = new Customer();
     static Order order = new Order();
     static int totalDays = 1;
@@ -73,7 +61,29 @@ public class ApplicationMain {
             }
         }
     }
+    
+    static public void closeStatement(PreparedStatement stmt) throws SQLException {
+        try {
+            stmt.close();
+        } finally {
+            stmt = null;
+            if (DEBUGdb) {
+                System.out.println("Statement connection exit");
+            }
+        }
+    }
 
+    static public void closeResultSet(ResultSet rs) throws SQLException {
+        try {
+            rs.close();
+        } finally {
+            rs = null;
+            if (DEBUGdb) {
+                System.out.println("ResultSet connection exit");
+            }
+        }
+    }
+    
     /**
      * @param args the command line arguments
      */

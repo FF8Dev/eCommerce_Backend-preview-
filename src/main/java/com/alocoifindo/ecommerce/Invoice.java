@@ -5,6 +5,8 @@
  */
 package com.alocoifindo.ecommerce;
 
+import java.time.LocalDate;
+
 /**
  *
  * @author facundoferreyra
@@ -91,11 +93,11 @@ public class Invoice extends Order {
         this.amount = amount;
     }
 
-    public String getCreationDate() {
+    public LocalDate getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(String creationDate) {
+    public void setCreationDate(LocalDate creationDate) {
         this.creationDate = creationDate;
     }
 

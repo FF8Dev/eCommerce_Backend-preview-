@@ -5,41 +5,14 @@
  */
 package com.alocoifindo.ecommerce;
 
-import com.github.lgooddatepicker.components.CalendarPanel;
 import com.github.lgooddatepicker.components.DatePicker;
 import com.github.lgooddatepicker.components.DatePickerSettings;
-import com.github.lgooddatepicker.components.ComponentEvent;
 import com.github.lgooddatepicker.optionalusertools.DateChangeListener;
 import com.github.lgooddatepicker.optionalusertools.DateVetoPolicy;
-import com.github.lgooddatepicker.optionalusertools.PickerUtilities;
-import com.github.lgooddatepicker.zinternaltools.CalendarSelectionEvent;
-import com.github.lgooddatepicker.zinternaltools.Convert;
-import com.github.lgooddatepicker.zinternaltools.CustomPopup;
 import com.github.lgooddatepicker.zinternaltools.DateChangeEvent;
-import com.github.lgooddatepicker.zinternaltools.InternalUtilities;
-import com.github.lgooddatepicker.zinternaltools.YearMonthChangeEvent;
-import com.privatejgoodies.forms.factories.CC;
-import com.privatejgoodies.forms.layout.FormLayout;
-import static com.sun.java.accessibility.util.AWTEventMonitor.addActionListener;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
 import java.awt.Image;
-import java.awt.Insets;
-import java.awt.Rectangle;
-import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
@@ -50,45 +23,22 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Clock;
-import java.time.DayOfWeek;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.chrono.ChronoLocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import javax.imageio.ImageIO;
-import javax.swing.AbstractCellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
-import javax.swing.JTable;
 import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.JTextField;
-import javax.swing.JToggleButton;
-import javax.swing.ScrollPaneConstants;
+import javax.swing.JOptionPane;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingUtilities;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.MatteBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
@@ -138,20 +88,26 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         setLocationRelativeTo(null);
         addWindowListener(this);
 
-        daysSpinner.setVisible(false);
+        if (!LoginUI.privileges) {
+            jSeparator1.setVisible(false);
+            productAddButton.setVisible(false);
+        }
         
         int customerId = ApplicationMain.customer.getId();
-        System.out.println("!!!: " + customerId);
+        if (ApplicationMain.DEBUG) {
+            System.out.println("!!!: " + customerId);
+        }
+        ApplicationMain.order.setCreationDate(LocalDate.now());
+        ApplicationMain.order.setStartDate(LocalDate.now());
+        ApplicationMain.order.setEndDate(LocalDate.now());
         setOrderId();
-        ApplicationMain.order.setCreationDate(String.valueOf(LocalDate.now()));
 
         // customerID starts at 2 in admin session
         if (customerId == 2) {
             customerLabel.setVisible(false);
             listCustomers();
         } else {
-//            listCustomers(
-            //retrieve comboBox to jLabel
+            //switch comboBox to jLabel
             customerSelect.setVisible(false);
             customerSelect.getItemAt(customerId);
 
@@ -164,42 +120,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         totalPriceField.setText("0.00");
 
-//        productsTable.addMouseListener(JTableButtonMouseListener);
-//            public void mousePressed(MouseEvent me) {
-//                ((ClickableCustomButtonInTable) (SwingUtilities.getDeepestComponentAt(productsTable, me.getX(), me.getY()).getParent().getParent())).doClick();
-//            }
-//        });
         productsTableView();
-
-//        productsTable.addMouseListener(new MouseAdapter() {
-//            public void mouseClicked(MouseEvent e) {
-//                
-//            int column = productsTable.getColumnModel().getColumnIndexAtX(e.getX()); // get the coloum of the button
-//            int row = e.getY() / productsTable.getRowHeight(); //get the row of the button
-//
-//            /*Checking the row or column is valid or not*/
-//            if (row < productsTable.getRowCount() && row >= 0 && column < productsTable.getColumnCount() && column == 0) {
-//                System.out.println("Clicked");
-////                rangeDatePickerMap.get(row).toggleCalendarButton.doClick();
-//                System.out.println("value in row: " + row + "in column: " + column);
-//                /*perform a click event*/
-//                   
-//                    
-////                    rangeDatePickerMap.get(row).passToggleButton(e);
-////                if (value instanceof JToggleButton) {
-////                    
-////                    
-////                    
-////                }
-//            }
-//        }
-//        });
-//        TableCellRenderer buttonRenderer = new JTableButtonRenderer();
-//        productsTable.getColumn("Select").setCellRenderer(buttonRenderer);
-//        productsTable.setDefaultEditor(JToggleButton.class, new CustomButtonEditor());
         setCustomerDataUI();
 
-        daysSpinner.addChangeListener(new daysListener());
+        daysSpinner.setVisible(false);
+//        daysSpinner.addChangeListener(new daysListener());
 
         ImageIcon calendarIcon = new ImageIcon("src/main/resources/calendar-20.png");
 
@@ -240,43 +165,6 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         datePickerEnd.addDateChangeListener(dateListenerEnd);
     }
 
-//    public static class ClickableCustomButtonInTable extends JToggleButton {
-//
-//        public ClickableCustomButtonInTable() {
-//            Dimension d = new Dimension(100, 100);
-//            JLabel lFirst = new JLabel("1st label");
-//            lFirst.setPreferredSize(d);
-//
-//            JLabel lSecond = new JLabel("2nd label");
-//            lSecond.setPreferredSize(d);
-//
-//            JPanel panel = new JPanel();
-//            panel.setOpaque(true);
-//
-//            panel.setLayout(new BorderLayout());
-//            panel.add(lFirst, BorderLayout.NORTH);
-//            panel.add(lSecond, BorderLayout.SOUTH);
-//            add(panel); //if i comment this line out the click event gets triggered immediately as expected
-//            addActionListener(new ActionListener() {
-//                @Override
-//                public void actionPerformed(ActionEvent e) {
-//                    System.out.println("Button clicked");
-//                }
-//            });
-//        }
-//
-//        private static class CustomButtonRenderer implements TableCellRenderer {
-//
-//            private final ClickableCustomButtonInTable button = new ClickableCustomButtonInTable();
-//
-//            @Override
-//            public Component getTableCellRendererComponent(JTable table,
-//                    Object value, boolean isSelected, boolean hasFocus, int row,
-//                    int column) {
-//                return button;
-//            }
-//        }
-//
     @Override
     public void windowClosing(WindowEvent e) {
         if (ApplicationMain.DEBUGwin) {
@@ -304,8 +192,12 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 if (ApplicationMain.DEBUG) {
                     System.out.println("DELETED actual Temporal Order");
                 }
+                ApplicationMain.closeStatement(stmtDelTempOrdLn);
+                ApplicationMain.closeStatement(stmtDelTempOrd);
             }
 
+            ApplicationMain.closeResultSet(rsTempOrd);
+            ApplicationMain.closeStatement(stmtSelTempOrd);
             ApplicationMain.stopConnection(con);
         } catch (SQLException ex) {
             System.out.println("Cannot DELETE Temporary Order");
@@ -356,8 +248,23 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         }
     }
 
-    private void setOrderId() {
-        LocalDate today = LocalDate.now();
+    public static void setOrderLastUpdate(int idOrder) {
+        try {
+            Connection con = ApplicationMain.startConnection();
+            
+            PreparedStatement stmtUpdOrd = con.prepareStatement("UPDATE Orders SET last_update=NOW() WHERE id_order=?");
+            stmtUpdOrd.setInt(1, idOrder);
+            stmtUpdOrd.executeUpdate();
+            
+            ApplicationMain.closeStatement(stmtUpdOrd);
+            ApplicationMain.stopConnection(con);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Couldn't update NOW() in last_update Order");
+        }
+    }
+    
+    public static void setOrderId() {
         try {
             Connection con = ApplicationMain.startConnection();
 
@@ -387,8 +294,8 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             } else {
                 userOrder = LoginUI.idUser;
             }
-            stmtOrdCreate.setDate(2, Date.valueOf(today));
-            stmtOrdCreate.setDate(3, Date.valueOf(today));
+            stmtOrdCreate.setDate(2, Date.valueOf(ApplicationMain.order.getStartDate()));
+            stmtOrdCreate.setDate(3, Date.valueOf(ApplicationMain.order.getEndDate()));
             stmtOrdCreate.setInt(4, userOrder);
             stmtOrdCreate.setInt(5, ApplicationMain.customer.getId());
             if (ApplicationMain.DEBUG) {
@@ -397,9 +304,12 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             }
             stmtOrdCreate.executeUpdate();
 
-            ApplicationMain.order.setStartDate(today);
-            ApplicationMain.order.setEndDate(today);
-
+            ApplicationMain.closeResultSet(rsOrdId);
+            ApplicationMain.closeStatement(stmtOrderId);
+            ApplicationMain.closeStatement(stmtRstOrderLine);
+            ApplicationMain.closeStatement(stmtRstIncrem);
+            ApplicationMain.closeStatement(stmtRstOrderNotFinished);
+            ApplicationMain.closeStatement(stmtOrdCreate);
             ApplicationMain.stopConnection(con);
         } catch (SQLException ex) {
             System.out.println("Cannot DELETE FROM order_line TABLE OR SELECT MAX(id_order) OR INSERT NEW order");
@@ -438,6 +348,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             for (Customer customer : customers) {
                 customersComboBoxModel.addElement(customer.getUsername());
             }
+            
+            ApplicationMain.closeResultSet(rsCustomers);
+            ApplicationMain.closeStatement(stmtCustomers);
             ApplicationMain.stopConnection(con);
         } catch (SQLException ex) {
             System.out.println("SQL Error in ComboBox");
@@ -447,12 +360,12 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
     public static void setCustomerDataUI() {
         customerLabel.setText(ApplicationMain.customer.getUsername());
-//        customersComboBoxModel.setSelectedItem(ApplicationMain.customer.getUsername());
-//        customerSelect.setSelectedItem(ApplicationMain.customer.getUsername());
         discountField.setText(String.valueOf(ApplicationMain.customer.getDiscount()));
         if (LoginUI.privileges) {
             customerSelect.setSelectedItem(ApplicationMain.customer.getUsername());
-            System.out.println("Selected Item: " + ApplicationMain.customer.getUsername());
+            if (ApplicationMain.DEBUG) {
+                System.out.println("Selected Customer Item: " + ApplicationMain.customer.getUsername());
+            }
         }
         customerSelect.addItemListener(comboListener);
     }
@@ -466,7 +379,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 // add to tempUsername username of list & to ApplicationMain.customer
                 tempUsername = item.toString();
                 ApplicationMain.customer.setUsername(tempUsername);
-                System.out.println("tempUsername: " + tempUsername);
+                if (ApplicationMain.DEBUG) {
+                    System.out.println("tempUsername: " + tempUsername);
+                }
                 OrderUI.customerLabel.setText(tempUsername);
 
                 try {
@@ -508,18 +423,25 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                         double priceWDiscount = pricePerProduct * ((100.0 - ApplicationMain.customer.getDiscount()) / 100);
 
                         String priceWDiscountSymbol = (String.format("%.2f", priceWDiscount)) + " €";
-                        System.out.println("PriceWDiscountSymbol(" + i + "): " + priceWDiscountSymbol);
+                        if (ApplicationMain.DEBUG) {
+                            System.out.println("PriceWDiscountSymbol(" + i + "): " + priceWDiscountSymbol);
+                        }
                         // to not update order_line if discount modified
                         updatedDiscount = true;
                         // check 5 corresponds with priceWDiscountSymbol or 6 --> after add idProductNamed
                         productsTableModel.setValueAt(priceWDiscountSymbol, i, 6);
                     }
-
+                    
+                    ApplicationMain.closeResultSet(rsCustSelected);
+                    ApplicationMain.closeStatement(stmtUpdOrd);
+                    ApplicationMain.closeStatement(stmtDiscounts);
                     ApplicationMain.stopConnection(con);
+                    
                 } catch (SQLException ex) {
                     System.out.println("Error while setting Discount percentage OR Update id_toCustomer");
                     ex.printStackTrace();
                 }
+                setOrderLastUpdate(ApplicationMain.order.getId());
                 updateTotalPrice(ApplicationMain.totalDays);
             }
         }
@@ -596,25 +518,21 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             Connection con;
             try {
                 con = ApplicationMain.startConnection();
-                String updateDateStartSQL = "UPDATE Orders SET start_rent_date=? WHERE id_order=?";
-                String updDaysOrderLineSQL = "UPDATE order_line SET days=? WHERE id_order=?";
+                String updateDateStartSQL = "UPDATE Orders SET start_rent_date=?, total_days=? WHERE id_order=?";
                 
                 PreparedStatement stmtDateStart = con.prepareStatement(updateDateStartSQL);
                 stmtDateStart.setDate(1, Date.valueOf(dce.getNewDate()));
-                stmtDateStart.setInt(2, ApplicationMain.order.getId());
+                stmtDateStart.setInt(2, adjustedDays);
+                stmtDateStart.setInt(3, ApplicationMain.order.getId());
                 stmtDateStart.executeUpdate();
                 
-                PreparedStatement stmtUpdDayLine = con.prepareStatement(updDaysOrderLineSQL);
-                stmtUpdDayLine.setInt(1, adjustedDays);
-                stmtUpdDayLine.setInt(2, idOrder);
-                stmtUpdDayLine.executeUpdate();
-                
+                ApplicationMain.closeStatement(stmtDateStart);
                 ApplicationMain.stopConnection(con);
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("Error while updating Date in Orders");
             }
-            
+            setOrderLastUpdate(ApplicationMain.order.getId());
         }
 
     }
@@ -643,95 +561,24 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             try {
                 con = ApplicationMain.startConnection();
                 String updateDateEndSQL = "UPDATE Orders SET end_rent_date=?, total_days=? WHERE id_order=?";
-                String updDaysOrderLineSQL = "UPDATE order_line SET days=? WHERE id_order=?";
+                
                 PreparedStatement stmtDateEnd = con.prepareStatement(updateDateEndSQL);
                 stmtDateEnd.setDate(1, Date.valueOf(dce.getNewDate()));
                 stmtDateEnd.setInt(2, adjustedDays);
                 stmtDateEnd.setInt(3, ApplicationMain.order.getId());
                 stmtDateEnd.executeUpdate();
                 
-                PreparedStatement stmtUpdDayLine = con.prepareStatement(updDaysOrderLineSQL);
-                stmtUpdDayLine.setInt(1, adjustedDays);
-                stmtUpdDayLine.setInt(2, idOrder);
-                stmtUpdDayLine.executeUpdate();
-                
+                ApplicationMain.closeStatement(stmtDateEnd);
                 ApplicationMain.stopConnection(con);
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("Error while updating Date in Orders");
             }
-            
+            setOrderLastUpdate(ApplicationMain.order.getId());
         }
         
     }
 
-//    private static class CustomButtonEditor extends AbstractCellEditor
-//            implements TableCellEditor {
-//
-//        JToggleButton foo = new JToggleButton();
-//
-//        @Override
-//        public Object getCellEditorValue() {
-//            return foo.getText();
-//        }
-//
-//        @Override
-//        public Component getTableCellEditorComponent(JTable table,
-//                Object value, boolean isSelected, int row, int column) {
-//            final JToggleButton button = rangeDatePickerMap.get(row).toggleCalendarButton;
-//            return button;
-//        }
-//
-//    }
-//
-//    private static class JTableButtonRenderer implements TableCellRenderer {
-//
-//        @Override
-//        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-//            JToggleButton button = rangeDatePickerMap.get(row).toggleCalendarButton;
-//            return button;
-//        }
-//    }
-//    public static class JTableButtonMouseListener implements MouseListener {
-//
-//        private final JTable table;
-//        
-//        public JTableButtonMouseListener(JTable table) {
-//            this.table = table;
-//        }
-//
-//        @Override
-//        public void mouseClicked(MouseEvent e) {
-//            int column = table.getColumnModel().getColumnIndexAtX(e.getX()); // get the coloum of the button
-//            int row = e.getY() / table.getRowHeight(); //get the row of the button
-//
-//            /*Checking the row or column is valid or not*/
-//            if (row < table.getRowCount() && row >= 0 && column < table.getColumnCount() && column == 0) {
-//                Object value = table.getValueAt(row, column);
-//                if (value instanceof JToggleButton) {
-//                    /*perform a click event*/
-//                    ((JToggleButton) value).doClick();
-//                }
-//            }
-//        }
-//        
-//        @Override
-//        public void mouseExited(MouseEvent e) {
-//            
-//        }
-//        @Override
-//        public void mouseEntered(MouseEvent e) {
-//            
-//        }
-//        @Override
-//        public void mouseReleased(MouseEvent e) {
-//            
-//        }
-//        @Override
-//        public void mousePressed(MouseEvent e) {
-//            
-//        }
-//    }
     // Checklist Table
     public static class ProductsChecklistTableModel extends DefaultTableModel implements TableModelListener {
 
@@ -775,11 +622,13 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             if (aValue instanceof Boolean && column == 0) {
                 Vector rowData = (Vector) getDataVector().get(row);
                 rowData.set(0, (boolean) aValue);
-                System.out.println("Pressed Button makes: " + aValue.toString());
+                if (ApplicationMain.DEBUG) {
+                    System.out.println("Pressed Button makes: " + aValue.toString());
+                }
                 // to update order_line if selected
                 updatedDiscount = false;
                 fireTableCellUpdated(row, column);
-
+                setOrderLastUpdate(ApplicationMain.order.getId());
             }
             if (column == 6) {
                 Vector rowData = (Vector) getDataVector().get(row);
@@ -823,15 +672,16 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     try {
                         Connection con = ApplicationMain.startConnection();
 
-                        // !!! id_order_line not match the order num !!!
-                        PreparedStatement stmtIns = con.prepareStatement("INSERT INTO order_line (id_product, id_order, days) VALUES (?, ?, ?);");
-                        System.out.println("id_product insert into order_line: " + ApplicationMain.products.get(row).getId());
+                        PreparedStatement stmtIns = con.prepareStatement("INSERT INTO order_line (id_product, id_order) VALUES (?, ?);");
+                        if (ApplicationMain.DEBUG) {
+                            System.out.println("id_product insert into order_line: " + ApplicationMain.products.get(row).getId());
+                        }
 
                         stmtIns.setInt(1, ApplicationMain.products.get(row).getId());
                         stmtIns.setInt(2, ApplicationMain.order.getId());
-                        stmtIns.setInt(3, ApplicationMain.totalDays);
                         stmtIns.executeUpdate();
 
+                        ApplicationMain.closeStatement(stmtIns);
                         ApplicationMain.stopConnection(con);
                     } catch (SQLException ex) {
                         System.out.println("order_line INSERT failed");
@@ -839,7 +689,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     }
 
                     // Final Price set
-                    System.out.println("setValueAt Row: " + row);
+                    if (ApplicationMain.DEBUG) {
+                        System.out.println("setValueAt Row: " + row);
+                    }
                     selectedProduct.put(row, true);
                     updateTotalPrice(ApplicationMain.totalDays);
 
@@ -872,6 +724,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                             stmtDel.setInt(1, ApplicationMain.products.get(row).getId());
                             stmtDel.executeUpdate();
 
+                            updateTotalPrice(ApplicationMain.totalDays);
+                            
+                            ApplicationMain.closeStatement(stmtDel);
                             ApplicationMain.stopConnection(con);
                         } catch (SQLException ex) {
                             System.out.println("order_line DELETE failed");
@@ -928,24 +783,12 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
                 ApplicationMain.products.add(new Product(idProduct, idProductNamed, productName, pricePerDay, discountPerDay));
 
-//                // Create a date picker: With veto policy.
-//                // Note: Veto policies can only be set after constructing the date picker.
-//                DatePickerSettings dateSettings = new DatePickerSettings();
-//                dateSettings.setFormatForDatesCommonEra("d MMM yyyy");
-//                dateSettings.setFormatForDatesBeforeCommonEra("d MMM uuuu");
-//                
-//                rangeDatePickerSettingsMap.put(counter, dateSettings);
-//                
-//                RangeDatePicker rangeDatePickerIndividual = new RangeDatePicker(rangeDatePickerSettingsMap.get(counter));
-//                rangeDatePickerMap.put(counter, rangeDatePickerIndividual);
-//
-//                DateVetoPolicy vetoPolicy = new SampleDateVetoPolicy();
-//                rangeDatePickerSettingsMap.get(counter).setVetoPolicy(vetoPolicy);
-//                dateSettings.setVetoPolicy(vetoPolicy);
                 Object[] productRow = {false, idProductNamed, productName, icon, category, keywords, pricePerDayDisplay, discountPerDayDisplay};
                 productsTableModel.addRow(productRow);
                 counter++;
             }
+            ApplicationMain.closeResultSet(rsProducts);
+            ApplicationMain.closeStatement(stmtProducts);
             ApplicationMain.stopConnection(con);
 
             // Apply discount prices by customer
@@ -954,7 +797,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 double priceWDiscount = pricePerProduct * ((100.0 - ApplicationMain.customer.getDiscount()) / 100);
 
                 String priceWDiscountSymbol = (String.format("%.2f", priceWDiscount)) + " €";
-                System.out.println("PriceWDiscountSymbol(" + i + "): " + priceWDiscountSymbol);
+                if (ApplicationMain.DEBUG) {
+                    System.out.println("PriceWDiscountSymbol(" + i + "): " + priceWDiscountSymbol);
+                }
                 // to not update order_line if discount modified
                 updatedDiscount = true;
                 productsTableModel.setValueAt(priceWDiscountSymbol, i, 6);
@@ -976,36 +821,61 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         columnModel.getColumn(7).setPreferredWidth(50); // Discount/Day
     }
 
-    public class daysListener implements ChangeListener {
+    // deprecated, for choose days with a JSpinner
+//    public class daysListener implements ChangeListener {
+//
+//        @Override
+//        public void stateChanged(ChangeEvent e) {
+//            JSpinner spinner = (JSpinner) e.getSource();
+//            ApplicationMain.totalDays = (int) spinner.getValue();
+//
+//            try {
+//                Connection con = ApplicationMain.startConnection();
+//
+//                String updDaysOrderSQL = "UPDATE Orders SET total_days=? WHERE id_order=?";
+//                String updDaysOrderLineSQL = "UPDATE order_line SET days=? WHERE id_order=?";
+//                PreparedStatement stmtUpdDay = con.prepareStatement(updDaysOrderSQL);
+//                stmtUpdDay.setInt(1, ApplicationMain.totalDays);
+//                stmtUpdDay.setInt(2, idOrder);
+//                stmtUpdDay.executeUpdate();
+//                System.out.println("totalDays in Order: " + ApplicationMain.totalDays);
+//                PreparedStatement stmtUpdDayLine = con.prepareStatement(updDaysOrderLineSQL);
+//                stmtUpdDayLine.setInt(1, ApplicationMain.totalDays);
+//                stmtUpdDayLine.setInt(2, idOrder);
+//                stmtUpdDayLine.executeUpdate();
+//
+//                ApplicationMain.closeStatement(stmtUpdDay);
+//                ApplicationMain.closeStatement(stmtUpdDayLine);
+//                ApplicationMain.stopConnection(con);
+//            } catch (SQLException ex) {
+//                System.out.println("Cannot UPDATE total_days in Order");
+//                ex.printStackTrace();
+//            }
+//            updateTotalPrice(ApplicationMain.totalDays);
+//        }
+//    }
 
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            JSpinner spinner = (JSpinner) e.getSource();
-            ApplicationMain.totalDays = (int) spinner.getValue();
-
-            try {
-                Connection con = ApplicationMain.startConnection();
-
-                String updDaysOrderSQL = "UPDATE Orders SET total_days=? WHERE id_order=?";
-                String updDaysOrderLineSQL = "UPDATE order_line SET days=? WHERE id_order=?";
-                PreparedStatement stmtUpdDay = con.prepareStatement(updDaysOrderSQL);
-                stmtUpdDay.setInt(1, ApplicationMain.totalDays);
-                stmtUpdDay.setInt(2, idOrder);
-                stmtUpdDay.executeUpdate();
-                System.out.println("totalDays in Order: " + ApplicationMain.totalDays);
-                PreparedStatement stmtUpdDayLine = con.prepareStatement(updDaysOrderLineSQL);
-                stmtUpdDayLine.setInt(1, ApplicationMain.totalDays);
-                stmtUpdDayLine.setInt(2, idOrder);
-                stmtUpdDayLine.executeUpdate();
-
-            } catch (SQLException ex) {
-                System.out.println("Cannot UPDATE total_days in Order");
-                ex.printStackTrace();
+    public static void updateOrderLine() {
+        String updateOrderLineSQL = "INSERT INTO order_line(id_product, id_order) VALUES (?, ?)"; 
+        try {
+            Connection con = ApplicationMain.startConnection();
+            for (int i = 0; i < productsTableModel.getRowCount(); i++) {
+                if (selectedProduct.get(i) != null && selectedProduct.get(i) != false) {
+                    PreparedStatement stmtUpdateOrderLine = con.prepareStatement(updateOrderLineSQL);
+                    stmtUpdateOrderLine.setInt(1, i+1);
+                    stmtUpdateOrderLine.setInt(2, ApplicationMain.order.getId());
+                    stmtUpdateOrderLine.executeUpdate();
+                
+                    ApplicationMain.closeStatement(stmtUpdateOrderLine);
+                }
             }
-            updateTotalPrice(ApplicationMain.totalDays);
+            ApplicationMain.stopConnection(con);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Couldn't update order_line New Products");
         }
     }
-
+    
     public static void updateTotalPrice(int days) {
         double finalPriceSum = 0.0;
         for (int i = 0; i < productsTableModel.getRowCount(); i++) {
@@ -1022,15 +892,20 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 finalPriceSum += finalPriceWithCD;
             }
         }
-        totalPriceField.setText(String.format("%.2f", finalPriceSum));
+        String finalPriceSumFormat = String.format("%.2f", finalPriceSum);
+        ApplicationMain.order.setAmount(Double.parseDouble(finalPriceSumFormat));
+        totalPriceField.setText(finalPriceSumFormat);
 
         // update Order amount
         try {
             Connection con = ApplicationMain.startConnection();
             PreparedStatement stmtAmnt = con.prepareStatement("UPDATE Orders SET amount=? WHERE id_order=?");
-            stmtAmnt.setDouble(1, finalPriceSum);
+            stmtAmnt.setDouble(1, Double.parseDouble(finalPriceSumFormat));
             stmtAmnt.setInt(2, idOrder);
             stmtAmnt.executeUpdate();
+            
+            ApplicationMain.closeStatement(stmtAmnt);
+            ApplicationMain.stopConnection(con);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Cannot update total amount of the Order");
@@ -1062,16 +937,20 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         discountField = new javax.swing.JTextField();
         discountLabel = new javax.swing.JLabel();
         itemsLabel = new javax.swing.JLabel();
-        userButton = new javax.swing.JButton();
-        invoiceButton = new javax.swing.JButton();
-        shippingButton = new javax.swing.JButton();
-        productAddButton = new javax.swing.JButton();
         daysSpinner = new javax.swing.JSpinner();
         customerLabel = new javax.swing.JLabel();
         datePanel = new javax.swing.JPanel();
         daysField = new javax.swing.JTextField();
         jLabel1 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
+        menuPanel = new javax.swing.JPanel();
+        userButton = new javax.swing.JButton();
+        jSeparator3 = new javax.swing.JSeparator();
+        shippingButton = new javax.swing.JButton();
+        jSeparator2 = new javax.swing.JSeparator();
+        invoiceButton = new javax.swing.JButton();
+        jSeparator1 = new javax.swing.JSeparator();
+        productAddButton = new javax.swing.JButton();
 
         jRadioButton1.setText("jRadioButton1");
 
@@ -1117,38 +996,6 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         itemsLabel.setText("Items");
 
-        userButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/customer_20.png"))); // NOI18N
-        userButton.setBorder(null);
-        userButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                userButtonActionPerformed(evt);
-            }
-        });
-
-        invoiceButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/invoice_20-04.png"))); // NOI18N
-        invoiceButton.setBorder(null);
-        invoiceButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                invoiceButtonActionPerformed(evt);
-            }
-        });
-
-        shippingButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/truck_20-03.png"))); // NOI18N
-        shippingButton.setBorder(null);
-        shippingButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                shippingButtonActionPerformed(evt);
-            }
-        });
-
-        productAddButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/add-to-collection_20-02.png"))); // NOI18N
-        productAddButton.setBorder(null);
-        productAddButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                productAddButtonActionPerformed(evt);
-            }
-        });
-
         daysSpinner.setModel(spinnerModel);
         daysSpinner.setValue(1);
 
@@ -1165,6 +1012,45 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         jLabel3.setText("End Date:");
 
+        userButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/customer_20.png"))); // NOI18N
+        userButton.setBorder(null);
+        userButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                userButtonActionPerformed(evt);
+            }
+        });
+        menuPanel.add(userButton);
+        menuPanel.add(jSeparator3);
+
+        shippingButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/truck_20-03.png"))); // NOI18N
+        shippingButton.setBorder(null);
+        shippingButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                shippingButtonActionPerformed(evt);
+            }
+        });
+        menuPanel.add(shippingButton);
+        menuPanel.add(jSeparator2);
+
+        invoiceButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/invoice_20-04.png"))); // NOI18N
+        invoiceButton.setBorder(null);
+        invoiceButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                invoiceButtonActionPerformed(evt);
+            }
+        });
+        menuPanel.add(invoiceButton);
+        menuPanel.add(jSeparator1);
+
+        productAddButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/add-to-collection_20-02.png"))); // NOI18N
+        productAddButton.setBorder(null);
+        productAddButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                productAddButtonActionPerformed(evt);
+            }
+        });
+        menuPanel.add(productAddButton);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -1174,34 +1060,26 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(datePanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
+                            .addComponent(datePanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addGroup(layout.createSequentialGroup()
                                 .addGap(6, 6, 6)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(logoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 171, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addComponent(toLabel)
-                                        .addGap(12, 12, 12)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                            .addComponent(customerSelect, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(customerLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                                     .addGroup(layout.createSequentialGroup()
                                         .addComponent(jLabel1)
                                         .addGap(73, 73, 73)
                                         .addComponent(jLabel3))
                                     .addGroup(layout.createSequentialGroup()
-                                        .addGap(21, 21, 21)
-                                        .addComponent(userButton)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                            .addComponent(menuPanel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                            .addComponent(logoLabel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 171, Short.MAX_VALUE))
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addComponent(invoiceButton)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addComponent(shippingButton)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addComponent(productAddButton)))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)))
+                                        .addComponent(toLabel)
+                                        .addGap(12, 12, 12)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                            .addComponent(customerSelect, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                            .addComponent(customerLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                                .addGap(0, 3, Short.MAX_VALUE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
@@ -1253,16 +1131,12 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                             .addComponent(customerSelect, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(toLabel)
                             .addComponent(customerLabel))
-                        .addGap(6, 6, 6)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(userButton)
-                            .addComponent(invoiceButton)
-                            .addComponent(shippingButton)
-                            .addComponent(productAddButton))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(menuPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel1)
-                            .addComponent(jLabel3))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel1))
                         .addGap(0, 0, 0)
                         .addComponent(datePanel, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
@@ -1281,7 +1155,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     .addGroup(layout.createSequentialGroup()
                         .addGap(18, 18, 18)
                         .addComponent(createOrderButton)))
-                .addContainerGap(23, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
@@ -1294,15 +1168,17 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     }//GEN-LAST:event_userButtonActionPerformed
 
     private void invoiceButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_invoiceButtonActionPerformed
-        // TODO add your handling code here:
+        InvoicesUI.invoiceTableView();
+        
     }//GEN-LAST:event_invoiceButtonActionPerformed
 
     private void shippingButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_shippingButtonActionPerformed
-        // TODO add your handling code here:
+        ShipmentUI.shipmentTableView();
     }//GEN-LAST:event_shippingButtonActionPerformed
 
     private void productAddButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_productAddButtonActionPerformed
-        // TODO add your handling code here:
+        JOptionPane.showMessageDialog(null, "Add Product Button not available yet!");
+        System.out.println("Add Product Button not available yet!");
     }//GEN-LAST:event_productAddButtonActionPerformed
 
     private void createOrderButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createOrderButtonActionPerformed
@@ -1362,7 +1238,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JRadioButton jRadioButton1;
+    private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JSeparator jSeparator2;
+    private javax.swing.JSeparator jSeparator3;
     private javax.swing.JLabel logoLabel;
+    private javax.swing.JPanel menuPanel;
     private javax.swing.JButton productAddButton;
     public static javax.swing.JTable productsTable;
     private javax.swing.JButton shippingButton;

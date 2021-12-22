@@ -19,7 +19,7 @@ public class Order {
     LocalDate startDate;
     LocalDate endDate;
     double amount;
-    String creationDate;
+    LocalDate creationDate;
     String shipmentStatus;
     String lastUpdate;
     String createdBy;
@@ -77,11 +77,11 @@ public class Order {
         this.amount = amount;
     }
 
-    public String getCreationDate() {
+    public LocalDate getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(String creationDate) {
+    public void setCreationDate(LocalDate creationDate) {
         this.creationDate = creationDate;
     }
 

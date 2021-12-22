@@ -17,16 +17,16 @@ import java.sql.SQLException;
 public class LoginUI extends javax.swing.JFrame {
 
     ApplicationMain app = new ApplicationMain();
-    
+
     static User enterUser = new User();
     static int idUser;
     static String username;
     static String password;
     static boolean privileges;
-    static boolean fromLogin;    
+    static boolean fromLogin;
     static boolean showAppUI;
     static LoginUI loginUI = new LoginUI();
-    
+
     /**
      * Creates new form LoginUI
      */
@@ -207,26 +207,31 @@ public class LoginUI extends javax.swing.JFrame {
         fromLogin = false;
         username = usernameField.getText();
         password = String.valueOf(passwordField.getPassword());
+
         try {
             Connection con = ApplicationMain.startConnection();
-            
-            PreparedStatement stmt = con.prepareStatement("SELECT privileges, users.id_user, discount FROM Users LEFT JOIN Customers ON Users.id_user = Customers.id_user WHERE username=? and password=?");
+
+            PreparedStatement stmt = con.prepareStatement("SELECT privileges, users.id_user, discount FROM Users LEFT JOIN Customers ON Users.id_user = Customers.id_user WHERE username=? and password= MD5(?)");
             stmt.setString(1, username);
             stmt.setString(2, password);
             ResultSet rs = stmt.executeQuery();
-            
+
             if (rs.next()) {
-                if (rs.getInt(1) == 1){
+                if (rs.getInt(1) == 1) {
                     privileges = true;
-                    System.out.println("User is an Admin");
+                    if (ApplicationMain.DEBUG) {
+                        System.out.println("User is an Admin");
+                    }
                 } else {
                     privileges = false;
-                    System.out.println("User is a Customer");
+                    if (ApplicationMain.DEBUG) {
+                        System.out.println("User is a Customer");
+                    }
                 }
                 idUser = rs.getInt("id_user");
                 int discount = rs.getInt("discount");
-                
-                if (privileges==true) {
+
+                if (privileges == true) {
                     ApplicationMain.customer.setId(2);
                     ApplicationMain.customer.setUsername("default_customer");
                     ApplicationMain.customer.setDiscount(0);
@@ -256,24 +261,27 @@ public class LoginUI extends javax.swing.JFrame {
                     } else {
                         System.out.println("Customer info not retrived");
                     }
+                    ApplicationMain.closeResultSet(rsCust);
+                    ApplicationMain.closeStatement(stmtCust);
                 }
-                
-                
-                
+
                 setVisible(false);
                 ApplicationUI.appUI.setVisible(true);
-                
-                
+
             } else {
-                System.out.println("The user doesn't exist");
+                if (ApplicationMain.DEBUG) {
+                    System.out.println("Invalid username/password");
+                }
                 errorLabel.setVisible(true);
                 lostPasswordButton.setVisible(true);
 //                fromLogin = true;
             }
+            ApplicationMain.closeResultSet(rs);
+            ApplicationMain.closeStatement(stmt);
             ApplicationMain.stopConnection(con);
-            
+
         } catch (SQLException ex) {
-           ex.printStackTrace();
+            ex.printStackTrace();
         }
     }//GEN-LAST:event_loginButtonActionPerformed
 
@@ -285,7 +293,7 @@ public class LoginUI extends javax.swing.JFrame {
         UserUI.userUI.setUpButtons();
         UserUI.userUI.setVisible(true);
         UserUI.userUI.usernameField.setText(username);
-        UserUI.userUI.passwordField.setText(password);        
+        UserUI.userUI.passwordField.setText(password);
     }//GEN-LAST:event_signUpButtonActionPerformed
 
     private void lostPasswordButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lostPasswordButtonActionPerformed
@@ -299,6 +307,7 @@ public class LoginUI extends javax.swing.JFrame {
         cust.setPassword(password);
         ApplicationMain.customer = cust;
     }
+
     /**
      * @param args the command line arguments
      */

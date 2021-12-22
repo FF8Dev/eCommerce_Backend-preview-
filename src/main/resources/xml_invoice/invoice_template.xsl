@@ -199,14 +199,17 @@
                     </fo:table>
                 </fo:static-content>
                 <fo:flow flow-name="xsl-region-body" border-collapse="collapse" reference-orientation="0">
-                    <fo:block>RENT MY STUFF</fo:block>
+                    <fo:block-container>
+                            <fo:block text-align="center">RENT MY STUFF</fo:block>
+                            <fo:block text-align="right">from: <xsl:value-of select="order/dates/start-rent-day"/>&#160; to <xsl:value-of select="order/dates/end-rent-day"/></fo:block>
+                    </fo:block-container>
                     <fo:table table-layout="fixed" width="100%" font-size="10pt" border-color="black" border-width="0.35mm" border-style="solid" text-align="center" display-align="center" space-after="5mm">
-                        <fo:table-column column-width="proportional-column-width(10)"/>
+                        <fo:table-column column-width="proportional-column-width(12)"/>
                         <fo:table-column column-width="proportional-column-width(40)"/>
                         <fo:table-column column-width="proportional-column-width(5)"/>
-                        <fo:table-column column-width="proportional-column-width(25)"/>
-                        <fo:table-column column-width="proportional-column-width(30)"/>
-                        <fo:table-column column-width="proportional-column-width(25)"/>
+                        <fo:table-column column-width="proportional-column-width(22)"/>
+                        <fo:table-column column-width="proportional-column-width(24)"/>
+                        <fo:table-column column-width="proportional-column-width(20)"/>
                         <fo:table-column column-width="proportional-column-width(25)"/>
                         <fo:table-column column-width="proportional-column-width(25)"/>
                         <fo:table-footer>

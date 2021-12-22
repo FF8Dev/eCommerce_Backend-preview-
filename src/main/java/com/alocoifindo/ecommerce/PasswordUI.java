@@ -41,10 +41,9 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
         errorOldPassLabel.setVisible(false);
         errorEmailLabel.setVisible(false);
         
+        // dispose by ESCAPE_KEY
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getRootPane().getActionMap();
-
-        // dispose by ESCAPE_KEY
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
         am.put("cancel", new AbstractAction() {
             @Override
@@ -128,14 +127,16 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
         try {
             UserUI.passwordValidator(newPass);
 
-            String updtPassSQL = "UPDATE Users SET password=? WHERE id_user=?";
+            String updtPassSQL = "UPDATE Users SET password= MD5(?) WHERE id_user=?";
             PreparedStatement stmtUpdtPass = con.prepareStatement(updtPassSQL);
             stmtUpdtPass.setString(1, String.valueOf(newPass));
             stmtUpdtPass.setInt(2, idUserChange);
             stmtUpdtPass.executeUpdate();
 
-            System.out.println("Password Updated"); 
+            ApplicationMain.closeStatement(stmtUpdtPass);
             ApplicationMain.stopConnection(con); 
+            
+            System.out.println("Password Updated");
             setVisible(false);
             return true;
 
@@ -373,7 +374,10 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
                             errorPanel.setVisible(true);
                             errorOldPassLabel.setVisible(true);
                         }
+                        ApplicationMain.closeResultSet(rsOldPass);
+                        ApplicationMain.closeStatement(stmtOldPass);
                     }
+                    ApplicationMain.stopConnection(con);
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("Couldn't set new password");
@@ -406,10 +410,13 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
                             ApplicationUI.appUI.setVisible(true);
                         }
                         
+                        ApplicationMain.closeResultSet(rsEmail);
+                        ApplicationMain.closeStatement(stmtEmail);
                     } else {
                         errorPanel.setVisible(true);
                         errorEmailLabel.setVisible(true);
                     }
+                    ApplicationMain.stopConnection(con);
                 } catch (SQLException e) {
                     e.printStackTrace();
                     System.out.println("Password Recovery couldn't be made");

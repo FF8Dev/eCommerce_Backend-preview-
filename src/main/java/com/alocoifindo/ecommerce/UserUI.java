@@ -32,7 +32,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
     static UserUI userUI = new UserUI();
     static boolean permission = false;
     static boolean validPassword = false;
-    
+
     static String firstname;
     static String lastname;
     static String addressLine;
@@ -41,9 +41,9 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
     static int telephone;
     static String email;
     static int discount;
-    
+
     static boolean updateOK = false;
-    
+
     /**
      * Creates new form UserUI
      */
@@ -54,11 +54,10 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         usernameExistLabel.setVisible(false);
         emailExistLabel.setVisible(false);
         errorFormatLabel.setVisible(false);
-        
+
         // dispose by ESCAPE_KEY
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getRootPane().getActionMap();
-
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
         am.put("cancel", new AbstractAction() {
             @Override
@@ -73,9 +72,9 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         if (ApplicationMain.DEBUGwin) {
             System.out.println("UserUI: windowClosing.");
         }
-        
+
     }
-    
+
     @Override
     public void windowClosed(WindowEvent e) {
         if (ApplicationMain.DEBUGwin) {
@@ -89,8 +88,10 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
     @Override
     public void windowOpened(WindowEvent e) {
         if (ApplicationMain.DEBUGwin) {
-           System.out.println("UserUI: windowOpened.");
+            System.out.println("UserUI: windowOpened.");
         }
+        UserUI.removeMessages();
+        UserUI.userUI.setUpButtons();
     }
 
     @Override
@@ -120,28 +121,28 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("UserUI: windowDeactivated.");
         }
     }
-    
+
     public void setUpButtons() {
         // DiscountField will not show
         discountLabel.setVisible(false);
         discountField.setVisible(false);
         discountField.setEditable(false);
-        
+
         // if came from ApplicationUI
         if (LoginUI.fromLogin == false) {
             getRootPane().setDefaultButton(updateButton);
             passwordLabel.setVisible(false);
             passwordField.setVisible(false);
-            
-        // if came from Login SignUp
+
+            // if came from Login SignUp
         } else if (LoginUI.fromLogin == true && LoginUI.privileges == false) {
             getRootPane().setDefaultButton(createUserButton);
             createUserButton.setVisible(true);
             // updateButton#Visible(false) if cames from Login SignUp
             updateButton.setVisible(false);
             updatePasswordButton.setVisible(false);
-            
-        } 
+
+        }
         if (LoginUI.privileges == true) {
             // createUserButton#Visibile(true) if Admin
             createUserButton.setVisible(true);
@@ -155,7 +156,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
             discountField.setEditable(true);
             callCustomerData();
         }
-        
+
         // if Customer && cames from ApplicationUI
         if (LoginUI.fromLogin == false && LoginUI.privileges == false) {
             getRootPane().setDefaultButton(updateButton);
@@ -163,21 +164,22 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
             updateButton.setVisible(true);
             updatePasswordButton.setVisible(true);
             callCustomerData();
-        } 
-        
-        
+        }
+
     }
-    
+
     public static void callCustomerData() {
         int customerId = ApplicationMain.customer.getId();
-        
+
         try {
             Connection con = ApplicationMain.startConnection();
-            System.out.println("id_customer to callCustomerData: " + customerId);
+            if (ApplicationMain.DEBUG) {
+                System.out.println("id_customer to callCustomerData: " + customerId);
+            }
             PreparedStatement stmtSelCust = con.prepareStatement("SELECT * FROM Customers WHERE id_user=?");
             stmtSelCust.setInt(1, customerId);
             ResultSet rsSelCust = stmtSelCust.executeQuery();
-            
+
             while (rsSelCust.next()) {
                 firstname = rsSelCust.getString("firstname");
                 lastname = rsSelCust.getString("lastname");
@@ -187,7 +189,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                 telephone = rsSelCust.getInt("telephone");
                 email = rsSelCust.getString("email");
                 discount = rsSelCust.getInt("discount");
-                
+
                 ApplicationMain.customer.setFirstname(firstname);
                 ApplicationMain.customer.setLastname(lastname);
                 ApplicationMain.customer.setAddressLine(addressLine);
@@ -198,14 +200,16 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                 ApplicationMain.customer.setDiscount(discount);
             }
             permission = true;
+            ApplicationMain.closeResultSet(rsSelCust);
+            ApplicationMain.closeStatement(stmtSelCust);
             ApplicationMain.stopConnection(con);
-            
+
         } catch (SQLIntegrityConstraintViolationException intex) {
             System.out.println("User exist");
             intex.printStackTrace();
         } catch (SQLException ex) {
             System.out.println("Cannot select data from Customers WHERE customerId");
-        } 
+        }
 
         usernameField.setText(ApplicationMain.customer.getUsername());
         passwordField.setText(ApplicationMain.customer.getPassword());
@@ -226,59 +230,62 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         }
         discountField.setText(String.valueOf(ApplicationMain.customer.getDiscount()));
     }
-    
+
     static class UsernameExistException extends Exception {
-      public UsernameExistException() {
-        usernameExistLabel.setVisible(true);
-        updateOK = false;
-      }
+
+        public UsernameExistException() {
+            usernameExistLabel.setVisible(true);
+            updateOK = false;
+        }
     }
-    
+
     // Class for user-defined InvalidPasswordException
     static class InvalidPasswordException extends Exception {
+
         int passwordConditionViolated = 0;
 
         public InvalidPasswordException(int conditionViolated) {
             super("Invalid Password");
             passwordConditionViolated = conditionViolated;
         }
-  
+
         public void showMessage() {
             switch (passwordConditionViolated) {
-            // Password length should be between 8 to 15 characters
-            case 1:
-                JOptionPane.showMessageDialog(null, "Password length should be between 8 to 15 characters", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-                break;
-            // Password should not contain any space
-            case 2:
-                JOptionPane.showMessageDialog(null, "Password should not contain any space", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-                break;
-            // Password should contain// at least one digit(0-9)
-            case 3:
-                JOptionPane.showMessageDialog(null, "Password should contain at least one digit(0-9)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-                break;
+                // Password length should be between 8 to 15 characters
+                case 1:
+                    JOptionPane.showMessageDialog(null, "Password length should be between 8 to 15 characters", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+                    break;
+                // Password should not contain any space
+                case 2:
+                    JOptionPane.showMessageDialog(null, "Password should not contain any space", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+                    break;
+                // Password should contain// at least one digit(0-9)
+                case 3:
+                    JOptionPane.showMessageDialog(null, "Password should contain at least one digit(0-9)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+                    break;
 //            // Password should contain at least one special character ( @, #, %, &, !, $ )
 //            case 4:
 //                JOptionPane.showMessageDialog(null, "Password should contain at least one special character", "Invalid Password", JOptionPane.ERROR_MESSAGE);
 //                break;
-            // Password should contain at least one uppercase letter(A-Z)
-            case 5:
-                JOptionPane.showMessageDialog(null, "Password should contain at least one uppercase letter(A-Z)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-                break;
-            // Password should contain at least one lowercase letter(a-z)
-            case 6:
-                JOptionPane.showMessageDialog(null, "Password should contain at least one lowercase letter(a-z)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-                break;
+                // Password should contain at least one uppercase letter(A-Z)
+                case 5:
+                    JOptionPane.showMessageDialog(null, "Password should contain at least one uppercase letter(A-Z)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+                    break;
+                // Password should contain at least one lowercase letter(a-z)
+                case 6:
+                    JOptionPane.showMessageDialog(null, "Password should contain at least one lowercase letter(a-z)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+                    break;
             }
         }
     }
-    
+
     static class EmailExistException extends Exception {
+
         public EmailExistException() {
             emailExistLabel.setVisible(true);
         }
     }
-    
+
     public static boolean usernameCheck(String username) {
         usernameExistLabel.setVisible(false);
         try {
@@ -286,15 +293,17 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
 
             PreparedStatement stmtChckUsr = con.prepareStatement("SELECT username FROM Users WHERE username=?");
             stmtChckUsr.setString(1, username);
-            
+
             ResultSet rsChckUsr = stmtChckUsr.executeQuery();
             if (rsChckUsr.next()) {
                 throw new UsernameExistException();
             }
-            
+
+            ApplicationMain.closeResultSet(rsChckUsr);
+            ApplicationMain.closeStatement(stmtChckUsr);
             ApplicationMain.stopConnection(con);
             return false;
-            
+
         } catch (UsernameExistException inte) {
             System.out.println("User exist");
             updateOK = false;
@@ -304,30 +313,30 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
             return true;
         }
     }
-    
+
     // A utility function to check whether a password is valid or not
     public static boolean passwordValidator(char[] password) throws InvalidPasswordException {
         String passwordWrap = String.copyValueOf(password);
         System.out.println("passwordWrap: " + passwordWrap);
         // for checking if password length is between 8 and 15
         if (!((passwordWrap.length() >= 8)
-              && (passwordWrap.length() <= 15))) {
+                && (passwordWrap.length() <= 15))) {
             throw new InvalidPasswordException(1);
         }
-  
+
         // to check space
         if (passwordWrap.contains(" ")) {
             throw new InvalidPasswordException(2);
         }
         if (true) {
             int count = 0;
-  
+
             // check digits from 0 to 9
             for (int i = 0; i <= 9; i++) {
-  
+
                 // to convert int to string
                 String str1 = Integer.toString(i);
-  
+
                 if (passwordWrap.contains(str1)) {
                     count = 1;
                 }
@@ -336,7 +345,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                 throw new InvalidPasswordException(3);
             }
         }
-  
+
 //        // // At least one capital letter one special characters
 //        if (!(passwordWrap.contains("@") || passwordWrap.contains("#")
 //              || passwordWrap.contains("!") || passwordWrap.contains("~")
@@ -354,13 +363,13 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         // At least one capital letter
         if (true) {
             int count = 0;
-  
+
             // checking capital letters
             for (int i = 65; i <= 90; i++) {
-  
+
                 // type casting
-                char c = (char)i;
-  
+                char c = (char) i;
+
                 String str1 = Character.toString(c);
                 if (passwordWrap.contains(str1)) {
                     count = 1;
@@ -373,14 +382,14 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         // At least one small letter
         if (true) {
             int count = 0;
-  
+
             // checking small letters
             for (int i = 90; i <= 122; i++) {
-  
+
                 // type casting
-                char c = (char)i;
+                char c = (char) i;
                 String str1 = Character.toString(c);
-  
+
                 if (passwordWrap.contains(str1)) {
                     count = 1;
                 }
@@ -389,12 +398,12 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                 throw new InvalidPasswordException(6);
             }
         }
-  
+
         // The password is valid
         validPassword = true;
         return validPassword;
     }
-    
+
     public static boolean emailCheck(String email) {
 //        emailExistLabel.setVisible(false);
         try {
@@ -402,15 +411,17 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
 
             PreparedStatement stmtChckUsr = con.prepareStatement("SELECT email FROM Customers WHERE email=?");
             stmtChckUsr.setString(1, email);
-            
+
             ResultSet rsChckUsr = stmtChckUsr.executeQuery();
             if (rsChckUsr.next()) {
                 throw new EmailExistException();
             }
-            
+
+            ApplicationMain.closeResultSet(rsChckUsr);
+            ApplicationMain.closeStatement(stmtChckUsr);
             ApplicationMain.stopConnection(con);
             return false;
-            
+
         } catch (EmailExistException inte) {
             System.out.println("Email exist");
             updateOK = false;
@@ -420,13 +431,13 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
             return true;
         }
     }
-    
+
     public static void removeMessages() {
         usernameExistLabel.setVisible(false);
         emailExistLabel.setVisible(false);
         errorFormatLabel.setVisible(false);
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -570,7 +581,9 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
 
             try {
                 Connection con = ApplicationMain.startConnection();
-                System.out.println("getUsername: " + ApplicationMain.customer.getUsername() );
+                if (ApplicationMain.DEBUG) {
+                    System.out.println("getUsername: " + ApplicationMain.customer.getUsername());
+                }
                 // Username change
                 if (!usernameField.getText().equals(ApplicationMain.customer.getUsername())) {
                     if (!usernameCheck(usernameSet)) {
@@ -580,13 +593,18 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                             PreparedStatement stmtChgUsrnm = con.prepareStatement(changeUsernameSQL);
                             stmtChgUsrnm.setString(1, newUsername);
                             stmtChgUsrnm.setInt(2, ApplicationMain.customer.getId());
+
                             stmtChgUsrnm.executeUpdate();
+                            ApplicationMain.closeStatement(stmtChgUsrnm);
+
+                            ApplicationMain.customer.setUsername(newUsername);
+                            if (ApplicationMain.DEBUG) {
+                                System.out.println("New username: " + newUsername);
+                            }
                             updateOK = true;
                             if (!emailSet.equals(email)) {
                                 emailCheck(emailSet);
                             }
-                            ApplicationMain.customer.setUsername(newUsername);
-                            System.out.println("New username: " + newUsername);
                         } catch (SQLException ex) {
                             System.out.println("Cannot update username in Users");
                         }
@@ -600,9 +618,11 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                         try {
                             PreparedStatement stmtUpdEmail = con.prepareStatement("UPDATE Customers SET email=? WHERE id_user=?");
                             stmtUpdEmail.setString(1, emailField.getText());
+                            ApplicationMain.customer.setEmail(emailField.getText());
                             stmtUpdEmail.setInt(2, ApplicationMain.customer.getId());
 
                             stmtUpdEmail.executeUpdate();
+                            ApplicationMain.closeStatement(stmtUpdEmail);
                             System.out.println("Email updated");
                             updateOK = true;
                             if (!usernameSet.equals(ApplicationMain.customer.getUsername())) {
@@ -616,12 +636,12 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                             ex.printStackTrace();
                         }
                     }
-                } 
+                }
 
                 if (!firstnameField.getText().equals(firstname) || !lastnameField.getText().equals(lastname)
-                    || !addressField.getText().equals(addressLine) || !cityField.getText().equals(city)
-                    || !postalcodeField.getText().equals(String.format("%05d", postalcode)) || !telephoneField.getText().equals(String.valueOf(telephone))
-                    || !discountField.getText().equals(String.valueOf(discount))) {
+                        || !addressField.getText().equals(addressLine) || !cityField.getText().equals(city)
+                        || !postalcodeField.getText().equals(String.format("%05d", postalcode)) || !telephoneField.getText().equals(String.valueOf(telephone))
+                        || !discountField.getText().equals(String.valueOf(discount))) {
                     updateOK = false;
                     // UPDATE Customers
                     String updateCustomerSQL = "UPDATE Customers SET firstname=?, lastname=?, address_line=?, city=?, postalcode=?, telephone=?, discount=?, last_update=NOW() WHERE id_user=?";
@@ -631,15 +651,21 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                         stmtUpdCustomer.setString(2, lastnameField.getText());
                         stmtUpdCustomer.setString(3, addressField.getText());
                         stmtUpdCustomer.setString(4, cityField.getText());
+                        ApplicationMain.customer.setFirstname(firstnameField.getText());
+                        ApplicationMain.customer.setLastname(lastnameField.getText());
+                        ApplicationMain.customer.setAddressLine(addressField.getText());
+                        ApplicationMain.customer.setCity(cityField.getText());
                         if (postalcodeField.getText().equals("")) {
                             stmtUpdCustomer.setInt(5, 0);
                         } else {
                             stmtUpdCustomer.setInt(5, Integer.parseInt(postalcodeField.getText()));
+                            ApplicationMain.customer.setPostalcode(Integer.parseInt(postalcodeField.getText()));
                         }
                         if (telephoneField.getText().equals("")) {
                             stmtUpdCustomer.setInt(6, 0);
                         } else {
                             stmtUpdCustomer.setInt(6, Integer.parseInt(telephoneField.getText()));
+                            ApplicationMain.customer.setTelephone(Integer.parseInt(telephoneField.getText()));
                         }
                         if (LoginUI.privileges == true) {
                             int newDiscount = Integer.parseInt(discountField.getText());
@@ -653,9 +679,11 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                         stmtUpdCustomer.setInt(8, ApplicationMain.customer.getId());
 
                         stmtUpdCustomer.executeUpdate();
-                        System.out.println("Data updated");
+                        ApplicationMain.closeStatement(stmtUpdCustomer);
+                        if (ApplicationMain.DEBUG) {
+                            System.out.println("Data updated");
+                        }
 
-                        ApplicationMain.stopConnection(con);
                         updateOK = true;
                         if (!usernameSet.equals(ApplicationMain.customer.getUsername()) || !emailSet.equals(email)) {
                             usernameCheck(usernameField.getText());
@@ -672,6 +700,8 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                         ex.printStackTrace();
                     }
                 }
+
+                ApplicationMain.stopConnection(con);
             } catch (SQLException ex) {
                 System.out.println("Data not uploaded");
                 ex.printStackTrace();
@@ -690,7 +720,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         String usernameSet = usernameField.getText();
         String firstnameSet = firstnameField.getText();
         String lastnameSet = lastnameField.getText();
-        String addressLineSet= addressField.getText();
+        String addressLineSet = addressField.getText();
         String citySet = cityField.getText();
         String postalcodeString = postalcodeField.getText();
         String telephoneString = telephoneField.getText();
@@ -699,24 +729,24 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         String emailSet = emailField.getText().toLowerCase();
         String discountString = discountField.getText();
         int discountSet = 0;
-        
+
         if (postalcodeString.matches("[0-9]+")) {
             postalcodeSet = Integer.parseInt(postalcodeString);
         }
-        
+
         if (telephoneString.matches("[0-9]+")) {
             telephoneSet = Integer.parseInt(telephoneString);
         }
-        
+
         if (discountString.matches("[0-9]+")) {
             discountSet = Integer.parseInt(discountString);
         }
-        
+
         try {
             boolean usernameCheck = usernameCheck(usernameSet);
             boolean emailCheck = emailCheck(emailSet);
             passwordValidator(passwordField.getPassword());
-            
+
             if (!usernameCheck && !emailCheck) {
                 try {
                     Connection con = ApplicationMain.startConnection();
@@ -730,25 +760,32 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                         id_user_new = rsMaxId.getInt(1) + 1;
                         id_userCreator = id_user_new;
 
-                    // Find ID from CURRENT USER CREATOR
+                        ApplicationMain.closeResultSet(rsMaxId);
+                        ApplicationMain.closeStatement(lastId_stmt);
+                        // Find ID from CURRENT USER CREATOR
                     } else {
                         PreparedStatement idCheck = con.prepareStatement("SELECT id_user FROM Users WHERE username=?");
                         idCheck.setString(1, LoginUI.username);
                         ResultSet rsId = idCheck.executeQuery();
                         rsId.next();
                         id_userCreator = rsId.getInt(1);
-                        
+
                         PreparedStatement lastId_stmt = con.prepareStatement("SELECT max(id_user) FROM Users");
                         ResultSet rsMaxId = lastId_stmt.executeQuery();
                         rsMaxId.next();
                         id_user_new = rsMaxId.getInt(1) + 1;
+
+                        ApplicationMain.closeResultSet(rsId);
+                        ApplicationMain.closeResultSet(rsMaxId);
+                        ApplicationMain.closeStatement(idCheck);
+                        ApplicationMain.closeStatement(lastId_stmt);
                     }
 
                     // UPDATE 
-                    PreparedStatement stmtInsertUsr = con.prepareStatement("INSERT INTO Users SET id_user=?, username=?, password=?");
-                                                                // 4 values in UPDATE
+                    PreparedStatement stmtInsertUsr = con.prepareStatement("INSERT INTO Users SET id_user=?, username=?, password=MD5(?)");
+                    // 4 values in UPDATE
                     PreparedStatement stmtInsertCust = con.prepareStatement("INSERT INTO Customers (`id_user`, `firstname`, `lastname`, `address_line`, `postalcode`, `city`, `email`, `telephone`, `discount`, `creation_date`, `last_update`, `id_ByUser`)"
-                                                               + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), ?)");
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), ?)");
                     stmtInsertUsr.setInt(1, id_user_new);
                     stmtInsertUsr.setString(2, usernameSet);
                     stmtInsertUsr.setString(3, String.copyValueOf(passwordField.getPassword()));
@@ -787,7 +824,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                     ApplicationMain.customer.setPostalcode(postalcodeSet);
                     ApplicationMain.customer.setEmail(emailSet);
                     ApplicationMain.customer.setTelephone(telephoneSet);
-                    
+
                     ApplicationUI.listCustomers();
                     ApplicationUI.setCustomerDataUI();
                     setVisible(false);
@@ -800,9 +837,11 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                     }
                     ApplicationUI.appUI.setVisible(true);
                     // !!! usernameExistLabel check from userUI button
-    //                    usernameExistLabel.setVisible(true);
+                    //                    usernameExistLabel.setVisible(true);
 
-                ApplicationMain.stopConnection(con);
+                    ApplicationMain.closeStatement(stmtInsertUsr);
+                    ApplicationMain.closeStatement(stmtInsertCust);
+                    ApplicationMain.stopConnection(con);
 
                 } catch (SQLIntegrityConstraintViolationException inte) {
                     inte.printStackTrace();
@@ -812,9 +851,9 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                     System.out.println("Data set error");
                     errorFormatLabel.setVisible(true);
                 } catch (SQLException ex) {
-                   ex.printStackTrace();
-                   System.out.println("Data not uploaded");
-                } 
+                    ex.printStackTrace();
+                    System.out.println("Data not uploaded");
+                }
             }
         } catch (InvalidPasswordException ipe) {
             System.out.println("Invalid password: " + passwordField.getPassword());
