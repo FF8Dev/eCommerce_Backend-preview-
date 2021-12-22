@@ -74,10 +74,10 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     
     DateListenerStart dateListenerStart = new DateListenerStart();
     DateListenerEnd dateListenerEnd = new DateListenerEnd();
-//    static Map<Integer, RangeDatePicker> rangeDatePickerMap;
-//    static Map<Integer, DatePickerSettings> rangeDatePickerSettingsMap;
-//    static RangeDatePicker rangeDatePicker = new RangeDatePicker(dateSettingsStart);
-
+    JButton datePickerButtonStart;
+    JButton datePickerButtonEnd;
+    ImageIcon calendarIcon = new ImageIcon("src/main/resources/calendar-20.png");
+    
     /**
      * Creates new form ApplicationUI
      */
@@ -126,14 +126,12 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         daysSpinner.setVisible(false);
 //        daysSpinner.addChangeListener(new daysListener());
 
-        ImageIcon calendarIcon = new ImageIcon("src/main/resources/calendar-20.png");
-
         dateSettingsStart = new DatePickerSettings();
         dateSettingsEnd = new DatePickerSettings();
 
         datePickerStart = new DatePicker(dateSettingsStart);
         datePickerEnd = new DatePicker(dateSettingsEnd);
-
+        
         dateSettingsStart.setFormatForDatesCommonEra("d MMM yyyy");
         dateSettingsStart.setFormatForDatesBeforeCommonEra("d MMM uuuu");
         dateSettingsEnd.setFormatForDatesCommonEra("d MMM yyyy");
@@ -147,17 +145,17 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         dateSettingsStart.setVetoPolicy(vetoPolicyStart);
         dateSettingsEnd.setVetoPolicy(vetoPolicyEnd);
         
-        JButton datePickerButtonStart = datePickerStart.getComponentToggleCalendarButton();
-        JButton datePickerButtonEnd = datePickerEnd.getComponentToggleCalendarButton();
+        datePickerStart.setDateToToday();
+        datePickerEnd.setDateToToday();
 
+        datePickerButtonStart = datePickerStart.getComponentToggleCalendarButton();
+        datePickerButtonEnd = datePickerEnd.getComponentToggleCalendarButton();
+        
         datePickerButtonStart.setText("");
         datePickerButtonStart.setIcon(calendarIcon);
         datePickerButtonEnd.setText("");
         datePickerButtonEnd.setIcon(calendarIcon);
-
-        datePickerStart.setDateToToday();
-        datePickerEnd.setDateToToday();
-
+        
         datePanel.add(datePickerStart);
         datePanel.add(datePickerEnd);
         
