@@ -19,9 +19,9 @@ import javax.swing.JTextField;
  *
  * @author facundoferreyra
  */
-public class ApplicationMain {
+public class RentMyStuff {
 
-    static boolean DEBUG = false;
+    static boolean DEBUG = true;
     static boolean DEBUGdb = false;
     static boolean DEBUGwin = false;
     static Customer customer = new Customer();

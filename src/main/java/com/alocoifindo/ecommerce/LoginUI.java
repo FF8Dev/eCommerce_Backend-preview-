@@ -16,7 +16,7 @@ import java.sql.SQLException;
  */
 public class LoginUI extends javax.swing.JFrame {
 
-    ApplicationMain app = new ApplicationMain();
+    RentMyStuff app = new RentMyStuff();
 
     static User enterUser = new User();
     static int idUser;
@@ -209,7 +209,7 @@ public class LoginUI extends javax.swing.JFrame {
         password = String.valueOf(passwordField.getPassword());
 
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             PreparedStatement stmt = con.prepareStatement("SELECT privileges, users.id_user, discount FROM Users LEFT JOIN Customers ON Users.id_user = Customers.id_user WHERE username=? and password= MD5(?)");
             stmt.setString(1, username);
@@ -219,12 +219,12 @@ public class LoginUI extends javax.swing.JFrame {
             if (rs.next()) {
                 if (rs.getInt(1) == 1) {
                     privileges = true;
-                    if (ApplicationMain.DEBUG) {
+                    if (RentMyStuff.DEBUG) {
                         System.out.println("User is an Admin");
                     }
                 } else {
                     privileges = false;
-                    if (ApplicationMain.DEBUG) {
+                    if (RentMyStuff.DEBUG) {
                         System.out.println("User is a Customer");
                     }
                 }
@@ -232,53 +232,53 @@ public class LoginUI extends javax.swing.JFrame {
                 int discount = rs.getInt("discount");
 
                 if (privileges == true) {
-                    ApplicationMain.customer.setId(2);
-                    ApplicationMain.customer.setUsername("default_customer");
-                    ApplicationMain.customer.setDiscount(0);
-                    ApplicationMain.customer.setFirstname("");
-                    ApplicationMain.customer.setLastname("");
-                    ApplicationMain.customer.setAddressLine("");
-                    ApplicationMain.customer.setCity("");
-                    ApplicationMain.customer.setPostalcode(0);
-                    ApplicationMain.customer.setTelephone(0);
-                    ApplicationMain.customer.setEmail("");
+                    RentMyStuff.customer.setId(2);
+                    RentMyStuff.customer.setUsername("default_customer");
+                    RentMyStuff.customer.setDiscount(0);
+                    RentMyStuff.customer.setFirstname("");
+                    RentMyStuff.customer.setLastname("");
+                    RentMyStuff.customer.setAddressLine("");
+                    RentMyStuff.customer.setCity("");
+                    RentMyStuff.customer.setPostalcode(0);
+                    RentMyStuff.customer.setTelephone(0);
+                    RentMyStuff.customer.setEmail("");
                 } else {
-                    ApplicationMain.customer.setId(idUser);
-                    ApplicationMain.customer.setUsername(username);
-                    ApplicationMain.customer.setDiscount(discount);
+                    RentMyStuff.customer.setId(idUser);
+                    RentMyStuff.customer.setUsername(username);
+                    RentMyStuff.customer.setDiscount(discount);
                     // SELECT for retrieve Customer data
                     PreparedStatement stmtCust = con.prepareStatement("SELECT * FROM Customers WHERE id_user=?");
                     stmtCust.setInt(1, idUser);
                     ResultSet rsCust = stmtCust.executeQuery();
                     if (rsCust.next()) {
-                        ApplicationMain.customer.setFirstname(rsCust.getString("firstname"));
-                        ApplicationMain.customer.setLastname(rsCust.getString("lastname"));
-                        ApplicationMain.customer.setAddressLine(rsCust.getString("address_line"));
-                        ApplicationMain.customer.setCity(rsCust.getString("city"));
-                        ApplicationMain.customer.setPostalcode(rsCust.getInt("postalcode"));
-                        ApplicationMain.customer.setTelephone(rsCust.getInt("telephone"));
-                        ApplicationMain.customer.setEmail(rsCust.getString("email"));
+                        RentMyStuff.customer.setFirstname(rsCust.getString("firstname"));
+                        RentMyStuff.customer.setLastname(rsCust.getString("lastname"));
+                        RentMyStuff.customer.setAddressLine(rsCust.getString("address_line"));
+                        RentMyStuff.customer.setCity(rsCust.getString("city"));
+                        RentMyStuff.customer.setPostalcode(rsCust.getInt("postalcode"));
+                        RentMyStuff.customer.setTelephone(rsCust.getInt("telephone"));
+                        RentMyStuff.customer.setEmail(rsCust.getString("email"));
                     } else {
                         System.out.println("Customer info not retrived");
                     }
-                    ApplicationMain.closeResultSet(rsCust);
-                    ApplicationMain.closeStatement(stmtCust);
+                    RentMyStuff.closeResultSet(rsCust);
+                    RentMyStuff.closeStatement(stmtCust);
                 }
 
                 setVisible(false);
                 ApplicationUI.appUI.setVisible(true);
 
             } else {
-                if (ApplicationMain.DEBUG) {
+                if (RentMyStuff.DEBUG) {
                     System.out.println("Invalid username/password");
                 }
                 errorLabel.setVisible(true);
                 lostPasswordButton.setVisible(true);
 //                fromLogin = true;
             }
-            ApplicationMain.closeResultSet(rs);
-            ApplicationMain.closeStatement(stmt);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rs);
+            RentMyStuff.closeStatement(stmt);
+            RentMyStuff.stopConnection(con);
 
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -289,7 +289,7 @@ public class LoginUI extends javax.swing.JFrame {
         fromLogin = true;
         username = usernameField.getText();
         password = String.valueOf(passwordField.getPassword());
-        UserUI.usernameCheck(username);
+        UserUI.usernameExist(username);
         UserUI.userUI.setUpButtons();
         UserUI.userUI.setVisible(true);
         UserUI.userUI.usernameField.setText(username);
@@ -297,7 +297,7 @@ public class LoginUI extends javax.swing.JFrame {
     }//GEN-LAST:event_signUpButtonActionPerformed
 
     private void lostPasswordButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lostPasswordButtonActionPerformed
-        ApplicationMain.customer.setUsername(usernameField.getText());
+        RentMyStuff.customer.setUsername(usernameField.getText());
         PasswordUI.passUI.setVisible(true);
         PasswordUI.showEmail();
     }//GEN-LAST:event_lostPasswordButtonActionPerformed
@@ -305,7 +305,7 @@ public class LoginUI extends javax.swing.JFrame {
     public void assignCustomer(Customer cust) {
         cust.setUsername(username);
         cust.setPassword(password);
-        ApplicationMain.customer = cust;
+        RentMyStuff.customer = cust;
     }
 
     /**

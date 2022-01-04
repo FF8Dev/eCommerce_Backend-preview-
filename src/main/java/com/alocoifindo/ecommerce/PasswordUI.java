@@ -55,7 +55,7 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
     
     @Override
     public void windowClosing(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("passUI: windowClosing.");
         }
         
@@ -63,7 +63,7 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
     
     @Override
     public void windowClosed(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             //This will only be seen on standard output.
             System.out.println("passUI: windowClosed.");
             errorPanel.setVisible(false);
@@ -75,35 +75,35 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
 
     @Override
     public void windowOpened(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
            System.out.println("passUI: windowOpened.");
         }
     }
 
     @Override
     public void windowIconified(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("passUI: windowIconified.");
         }
     }
 
     @Override
     public void windowDeiconified(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("passUI: windowDeiconified.");
         }
     }
 
     @Override
     public void windowActivated(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("passUI: windowActivated.");
         }
     }
 
     @Override
     public void windowDeactivated(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("passUI: windowDeactivated.");
         }
     }
@@ -121,7 +121,7 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
     }
     
     public boolean setPasswordInto(char[] newPass, int idUserChange) throws SQLException{
-        Connection con = ApplicationMain.startConnection();
+        Connection con = RentMyStuff.startConnection();
 
         // Password Check && Applying to DataBase
         try {
@@ -133,8 +133,8 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
             stmtUpdtPass.setInt(2, idUserChange);
             stmtUpdtPass.executeUpdate();
 
-            ApplicationMain.closeStatement(stmtUpdtPass);
-            ApplicationMain.stopConnection(con); 
+            RentMyStuff.closeStatement(stmtUpdtPass);
+            RentMyStuff.stopConnection(con); 
             
             System.out.println("Password Updated");
             setVisible(false);
@@ -353,13 +353,13 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
         // if oldPassword is not null
         if (!String.valueOf(oldPassword).equals("")) {
             try {
-                    Connection con = ApplicationMain.startConnection();
+                    Connection con = RentMyStuff.startConnection();
 
                     // if oldPassword entered
                     if (!String.valueOf(oldPassword).equals("")) {
                         String oldPassSQL = "SELECT id_user FROM Users WHERE username=? AND password=?";
                         PreparedStatement stmtOldPass = con.prepareStatement(oldPassSQL);
-                        stmtOldPass.setString(1, ApplicationMain.customer.getUsername());
+                        stmtOldPass.setString(1, RentMyStuff.customer.getUsername());
                         stmtOldPass.setString(2, String.valueOf(oldPasswordField.getPassword()));
                         ResultSet rsOldPass = stmtOldPass.executeQuery();
                         if (rsOldPass.next()) {
@@ -374,26 +374,26 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
                             errorPanel.setVisible(true);
                             errorOldPassLabel.setVisible(true);
                         }
-                        ApplicationMain.closeResultSet(rsOldPass);
-                        ApplicationMain.closeStatement(stmtOldPass);
+                        RentMyStuff.closeResultSet(rsOldPass);
+                        RentMyStuff.closeStatement(stmtOldPass);
                     }
-                    ApplicationMain.stopConnection(con);
+                    RentMyStuff.stopConnection(con);
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("Couldn't set new password");
             }
             
         // if email exists
-        } else if (UserUI.emailCheck(email)) {
+        } else if (UserUI.emailExist(email)) {
             // check newPassword and repeatedPassword
             if (String.valueOf(newPassword).equals(String.valueOf(repeatedPassword)) && !String.valueOf(newPassword).equals("")) {
                 
                 try {
-                    Connection con = ApplicationMain.startConnection();
+                    Connection con = RentMyStuff.startConnection();
 
                     String oldPassSQL = "SELECT Customers.id_user, discount FROM Customers INNER JOIN Users WHERE username=? AND email=?";
                     PreparedStatement stmtEmail = con.prepareStatement(oldPassSQL);
-                    stmtEmail.setString(1, ApplicationMain.customer.getUsername());
+                    stmtEmail.setString(1, RentMyStuff.customer.getUsername());
                     stmtEmail.setString(2, emailField.getText());
                     ResultSet rsEmail = stmtEmail.executeQuery();
                     if (rsEmail.next()) {
@@ -402,21 +402,21 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
                         
                         // Method to check & set password
                         if (setPasswordInto(newPassword, idUserChange)) {
-                            ApplicationMain.customer.setId(idUserChange);
-                            ApplicationMain.customer.setDiscount(discount);
+                            RentMyStuff.customer.setId(idUserChange);
+                            RentMyStuff.customer.setDiscount(discount);
 
                             setVisible(false);
                             LoginUI.loginUI.setVisible(false);
                             ApplicationUI.appUI.setVisible(true);
                         }
                         
-                        ApplicationMain.closeResultSet(rsEmail);
-                        ApplicationMain.closeStatement(stmtEmail);
+                        RentMyStuff.closeResultSet(rsEmail);
+                        RentMyStuff.closeStatement(stmtEmail);
                     } else {
                         errorPanel.setVisible(true);
                         errorEmailLabel.setVisible(true);
                     }
-                    ApplicationMain.stopConnection(con);
+                    RentMyStuff.stopConnection(con);
                 } catch (SQLException e) {
                     e.printStackTrace();
                     System.out.println("Password Recovery couldn't be made");

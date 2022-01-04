@@ -10,6 +10,8 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -45,7 +47,7 @@ import javax.swing.table.TableModel;
  *
  * @author facundoferreyra
  */
-public class InvoicesUI extends javax.swing.JFrame {
+public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
 
     static InvoicesTableModel invoicesTableModel = new InvoicesTableModel();
     static InvoicesUI invoicesUI = new InvoicesUI();
@@ -54,12 +56,15 @@ public class InvoicesUI extends javax.swing.JFrame {
 
     static DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
 
+    static int orderIdTemp = 0;
+    
     /**
      * Creates new form InvoicesUI
      */
     public InvoicesUI() {
         initComponents();
         setLocationRelativeTo(null);
+        addWindowListener(this);
 
         invoicesTable.setRowHeight(25);
         TableColumnModel columnModel = invoicesTable.getColumnModel();
@@ -96,6 +101,58 @@ public class InvoicesUI extends javax.swing.JFrame {
             }
         });
     }
+    
+    @Override
+    public void windowClosing(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            //This will only be seen on standard output.
+            System.out.println("InvoicesUI: windowClosing.");
+        }
+    }
+
+    @Override
+    public void windowClosed(WindowEvent e) {
+        invoicesTable.removeEditor();
+        if (RentMyStuff.DEBUGwin) {
+            //This will only be seen on standard output.
+            System.out.println("InvoicesUI: windowClosed.");
+        }
+    }
+
+    @Override
+    public void windowOpened(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("InvoicesUI: windowOpened.");
+        }
+    }
+
+    @Override
+    public void windowIconified(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("InvoicesUI: windowIconified.");
+        }
+    }
+
+    @Override
+    public void windowDeiconified(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("InvoicesUI: windowDeiconified.");
+        }
+    }
+
+    @Override
+    public void windowActivated(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("InvoicesUI: windowActivated.");
+        }
+    }
+
+    @Override
+    public void windowDeactivated(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("InvoicesUI: windowDeactivated.");
+        }
+    }
 
     private static class HeaderRenderer implements TableCellRenderer {
 
@@ -121,15 +178,16 @@ public class InvoicesUI extends javax.swing.JFrame {
         String updateStatusSQL = "UPDATE Invoices SET invoice_status=? WHERE id_order=?";
 
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             PreparedStatement stmtUpdStatus = con.prepareStatement(updateStatusSQL);
             stmtUpdStatus.setString(1, status);
             stmtUpdStatus.setInt(2, orderId);
             stmtUpdStatus.executeUpdate();
 
-            ApplicationMain.closeStatement(stmtUpdStatus);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeStatement(stmtUpdStatus);
+            RentMyStuff.stopConnection(con);
+            ApplicationUI.setOrderLastUpdate(orderId);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Couldn't update status in Invoice");
@@ -142,15 +200,15 @@ public class InvoicesUI extends javax.swing.JFrame {
         String updateStatusSQL = "UPDATE Invoices SET payment_date=? WHERE id_order=?";
 
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             PreparedStatement stmtUpdStatus = con.prepareStatement(updateStatusSQL);
             stmtUpdStatus.setDate(1, java.sql.Date.valueOf(dateSQL));
             stmtUpdStatus.setInt(2, orderId);
             stmtUpdStatus.executeUpdate();
 
-            ApplicationMain.closeStatement(stmtUpdStatus);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeStatement(stmtUpdStatus);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Couldn't update payment_date in Invoice");
@@ -161,14 +219,14 @@ public class InvoicesUI extends javax.swing.JFrame {
         String updateStatusSQL = "UPDATE Invoices SET payment_date=null WHERE id_order=?";
         
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             PreparedStatement stmtNullStatus = con.prepareStatement(updateStatusSQL);
             stmtNullStatus.setInt(1, orderId);
             stmtNullStatus.executeUpdate();
 
-            ApplicationMain.closeStatement(stmtNullStatus);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeStatement(stmtNullStatus);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Couldn't set null in the payment_date Invoice");
@@ -179,14 +237,14 @@ public class InvoicesUI extends javax.swing.JFrame {
         String cancelStatusSQL = "UPDATE Orders SET shipment_status='Cancelled' WHERE id_order=?";
         
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             PreparedStatement stmtCnclStatus = con.prepareStatement(cancelStatusSQL);
             stmtCnclStatus.setInt(1, orderId);
             stmtCnclStatus.executeUpdate();
 
-            ApplicationMain.closeStatement(stmtCnclStatus);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeStatement(stmtCnclStatus);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Couldn't set 'Cancelled' in the shipmanet_status Invoice");
@@ -228,9 +286,10 @@ public class InvoicesUI extends javax.swing.JFrame {
 
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            orderIdTemp = invoicesTableModel.getRowCount() - row;
             if (value instanceof String) {
                 this.status = (String) value;
-                this.row = row + 1;
+                this.row = orderIdTemp;
             }
 
             JComboBox statusComboBox = new JComboBox(optionsCombo);
@@ -289,23 +348,23 @@ public class InvoicesUI extends javax.swing.JFrame {
         // 0= "Username", 1= "Order ID", 2= "Status", 3= "Issue Date", 4= "Payment Date", 5= "Amount"
         @Override
         public void setValueAt(Object aValue, int row, int column) {
-
+            orderIdTemp = invoicesTableModel.getRowCount() - row;
             if (column == 2) {                                                  // Status
                 Vector rowData = (Vector) getDataVector().get(row);
                 rowData.set(2, (String) aValue);
-                ApplicationUI.setOrderLastUpdate(row + 1);
-                ApplicationUI.setOrderLastUpdate(row + 1);
+                ApplicationUI.setOrderLastUpdate(orderIdTemp);
                 fireTableCellUpdated(row, column);
+                
 
             } else if (4 == column) {                                           // Payment Date
                 Vector rowData = (Vector) getDataVector().get(row);
                 rowData.set(4, (String) aValue);
                 if (aValue == null) {
-                    deletePaymentDate(row + 1);
+                    deletePaymentDate(orderIdTemp);
                 } else {
-                    updatePaymentDate(String.valueOf(aValue), row + 1);
+                    updatePaymentDate(String.valueOf(aValue), orderIdTemp);
                 }
-                ApplicationUI.setOrderLastUpdate(row + 1);
+                ApplicationUI.setOrderLastUpdate(orderIdTemp);
                 fireTableCellUpdated(row, column);
             }
         }
@@ -323,32 +382,32 @@ public class InvoicesUI extends javax.swing.JFrame {
                     tableModel.setValueAt(LocalDate.now().format(dateFormat), row, 4);
                 } else if (jComboData == "Cancelled") {
                     tableModel.setValueAt(null, row, 4);
-                    cancelShipment(row + 1);
+                    cancelShipment(orderIdTemp);
                 } else if (jComboData == "Issued") {
                     tableModel.setValueAt(null, row, 4);
                 }
-            }
+            } 
         }
     }
 
     public static void invoiceTableView() {
         invoicesTableModel.setRowCount(0);
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             String selectInvoicesSQL = "SELECT username, Orders.id_order, invoice_status, issue_date, payment_date, amount FROM Invoices "
                     + "INNER JOIN Orders ON Invoices.id_order = Orders.id_order\n"
                     + "INNER JOIN Customers ON Orders.id_tocustomer = Customers.id_user\n"
                     + "INNER JOIN Users ON Customers.id_user = Users.id_user\n";
             if (!LoginUI.privileges) {
-                selectInvoicesSQL += "WHERE Users.id_user=? ORDER BY id_order ASC";
+                selectInvoicesSQL += "WHERE Users.id_user=? ORDER BY id_order DESC";
             } else {
-                selectInvoicesSQL += "ORDER BY id_order ASC";
+                selectInvoicesSQL += "ORDER BY id_order DESC";
             }
             
             PreparedStatement stmtInvoices = con.prepareStatement(selectInvoicesSQL);
             if (!LoginUI.privileges) {
-                stmtInvoices.setInt(1, ApplicationMain.customer.getId());
+                stmtInvoices.setInt(1, RentMyStuff.customer.getId());
             }
             
             ResultSet rsInvoices = stmtInvoices.executeQuery();
@@ -375,9 +434,9 @@ public class InvoicesUI extends javax.swing.JFrame {
                 invoicesTableModel.addRow(invoiceRow);
 
             }
-            ApplicationMain.closeResultSet(rsInvoices);
-            ApplicationMain.closeStatement(stmtInvoices);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rsInvoices);
+            RentMyStuff.closeStatement(stmtInvoices);
+            RentMyStuff.stopConnection(con);
 
         } catch (SQLException ex) {
             System.out.println("Problem in SQL Table Represent");

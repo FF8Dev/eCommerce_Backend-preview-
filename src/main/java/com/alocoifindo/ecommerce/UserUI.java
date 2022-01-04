@@ -33,16 +33,32 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
     static boolean permission = false;
     static boolean validPassword = false;
 
-    static String firstname;
-    static String lastname;
-    static String addressLine;
-    static String city;
-    static int postalcode;
-    static int telephone;
-    static String email;
-    static int discount;
+    static String firstnameSQL;
+    static String lastnameSQL;
+    static String addressLineSQL;
+    static String citySQL;
+    static int postalcodeSQL;
+    static int telephoneSQL;
+    static String emailSQL;
+    static int discountSQL;
+
+    String usernameSet;
+    String firstnameSet;
+    String lastnameSet;
+    String addressLineSet;
+    String citySet;
+    String postalcodeString;
+    String telephoneString;
+    int postalcodeSet;
+    int telephoneSet;
+    String emailSet;
+    String discountString;
+    int discountSet;
+    // postalcodeSet, telephoneSet & discountSet getText in setUpNumericalSets()
 
     static boolean updateOK = false;
+    static boolean justUpdatedUsername = false;
+    static boolean justUpdatedEmail = false;
 
     /**
      * Creates new form UserUI
@@ -51,10 +67,9 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         initComponents();
         setLocationRelativeTo(null);
         addWindowListener(this);
-        usernameExistLabel.setVisible(false);
-        emailExistLabel.setVisible(false);
-        errorFormatLabel.setVisible(false);
+        removeMessages();
 
+        // postalcodeSet, telephoneSet & discountSet getText in setUpNumericalSets()
         // dispose by ESCAPE_KEY
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getRootPane().getActionMap();
@@ -69,7 +84,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
 
     @Override
     public void windowClosing(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("UserUI: windowClosing.");
         }
 
@@ -77,17 +92,18 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
 
     @Override
     public void windowClosed(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             //This will only be seen on standard output.
             System.out.println("UserUI: windowClosed.");
             emailExistLabel.setVisible(false);
+            emailEmptyLabel.setVisible(false);
             errorFormatLabel.setVisible(false);
         }
     }
 
     @Override
     public void windowOpened(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("UserUI: windowOpened.");
         }
         UserUI.removeMessages();
@@ -96,28 +112,28 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
 
     @Override
     public void windowIconified(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("UserUI: windowIconified.");
         }
     }
 
     @Override
     public void windowDeiconified(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("UserUI: windowDeiconified.");
         }
     }
 
     @Override
     public void windowActivated(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("UserUI: windowActivated.");
         }
     }
 
     @Override
     public void windowDeactivated(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("UserUI: windowDeactivated.");
         }
     }
@@ -149,7 +165,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
             updatePasswordButton.setVisible(false);
             passwordLabel.setVisible(true);
             passwordField.setVisible(true);
-            // discount#Visible if admin
+            // discountSQL#Visible if admin
             // DiscountField will show only to Admin
             discountLabel.setVisible(true);
             discountField.setVisible(true);
@@ -169,11 +185,11 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
     }
 
     public static void callCustomerData() {
-        int customerId = ApplicationMain.customer.getId();
+        int customerId = RentMyStuff.customer.getId();
 
         try {
-            Connection con = ApplicationMain.startConnection();
-            if (ApplicationMain.DEBUG) {
+            Connection con = RentMyStuff.startConnection();
+            if (RentMyStuff.DEBUG) {
                 System.out.println("id_customer to callCustomerData: " + customerId);
             }
             PreparedStatement stmtSelCust = con.prepareStatement("SELECT * FROM Customers WHERE id_user=?");
@@ -181,28 +197,28 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
             ResultSet rsSelCust = stmtSelCust.executeQuery();
 
             while (rsSelCust.next()) {
-                firstname = rsSelCust.getString("firstname");
-                lastname = rsSelCust.getString("lastname");
-                addressLine = rsSelCust.getString("address_line");
-                city = rsSelCust.getString("city");
-                postalcode = rsSelCust.getInt("postalcode");
-                telephone = rsSelCust.getInt("telephone");
-                email = rsSelCust.getString("email");
-                discount = rsSelCust.getInt("discount");
+                firstnameSQL = rsSelCust.getString("firstname");
+                lastnameSQL = rsSelCust.getString("lastname");
+                addressLineSQL = rsSelCust.getString("address_line");
+                citySQL = rsSelCust.getString("city");
+                postalcodeSQL = rsSelCust.getInt("postalcode");
+                telephoneSQL = rsSelCust.getInt("telephone");
+                emailSQL = rsSelCust.getString("email");
+                discountSQL = rsSelCust.getInt("discount");
 
-                ApplicationMain.customer.setFirstname(firstname);
-                ApplicationMain.customer.setLastname(lastname);
-                ApplicationMain.customer.setAddressLine(addressLine);
-                ApplicationMain.customer.setCity(city);
-                ApplicationMain.customer.setPostalcode(postalcode);
-                ApplicationMain.customer.setTelephone(telephone);
-                ApplicationMain.customer.setEmail(email);
-                ApplicationMain.customer.setDiscount(discount);
+                RentMyStuff.customer.setFirstname(firstnameSQL);
+                RentMyStuff.customer.setLastname(lastnameSQL);
+                RentMyStuff.customer.setAddressLine(addressLineSQL);
+                RentMyStuff.customer.setCity(citySQL);
+                RentMyStuff.customer.setPostalcode(postalcodeSQL);
+                RentMyStuff.customer.setTelephone(telephoneSQL);
+                RentMyStuff.customer.setEmail(emailSQL);
+                RentMyStuff.customer.setDiscount(discountSQL);
             }
             permission = true;
-            ApplicationMain.closeResultSet(rsSelCust);
-            ApplicationMain.closeStatement(stmtSelCust);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rsSelCust);
+            RentMyStuff.closeStatement(stmtSelCust);
+            RentMyStuff.stopConnection(con);
 
         } catch (SQLIntegrityConstraintViolationException intex) {
             System.out.println("User exist");
@@ -211,97 +227,42 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("Cannot select data from Customers WHERE customerId");
         }
 
-        usernameField.setText(ApplicationMain.customer.getUsername());
-        passwordField.setText(ApplicationMain.customer.getPassword());
-        firstnameField.setText(ApplicationMain.customer.getFirstname());
-        lastnameField.setText(ApplicationMain.customer.getLastname());
-        if (ApplicationMain.customer.getTelephone() == 0) {
+        usernameField.setText(RentMyStuff.customer.getUsername());
+        passwordField.setText(RentMyStuff.customer.getPassword());
+        firstnameField.setText(RentMyStuff.customer.getFirstname());
+        lastnameField.setText(RentMyStuff.customer.getLastname());
+        if (RentMyStuff.customer.getTelephone() == 0) {
             telephoneField.setText("");
         } else {
-            telephoneField.setText(String.valueOf(ApplicationMain.customer.getTelephone()));
+            telephoneField.setText(String.valueOf(RentMyStuff.customer.getTelephone()));
         }
-        emailField.setText(ApplicationMain.customer.getEmail());
-        addressField.setText(ApplicationMain.customer.getAddressLine());
-        cityField.setText(ApplicationMain.customer.getCity());
-        if (postalcode == 00000) {
+        emailField.setText(RentMyStuff.customer.getEmail());
+        addressField.setText(RentMyStuff.customer.getAddressLine());
+        cityField.setText(RentMyStuff.customer.getCity());
+        if (postalcodeSQL == 00000) {
             postalcodeField.setText("");
         } else {
-            postalcodeField.setText(String.format("%05d", ApplicationMain.customer.getPostalcode()));
+            postalcodeField.setText(String.format("%05d", RentMyStuff.customer.getPostalcode()));
         }
-        discountField.setText(String.valueOf(ApplicationMain.customer.getDiscount()));
+        discountField.setText(String.valueOf(RentMyStuff.customer.getDiscount()));
     }
 
-    static class UsernameExistException extends Exception {
-
-        public UsernameExistException() {
-            usernameExistLabel.setVisible(true);
-            updateOK = false;
-        }
-    }
-
-    // Class for user-defined InvalidPasswordException
-    static class InvalidPasswordException extends Exception {
-
-        int passwordConditionViolated = 0;
-
-        public InvalidPasswordException(int conditionViolated) {
-            super("Invalid Password");
-            passwordConditionViolated = conditionViolated;
-        }
-
-        public void showMessage() {
-            switch (passwordConditionViolated) {
-                // Password length should be between 8 to 15 characters
-                case 1:
-                    JOptionPane.showMessageDialog(null, "Password length should be between 8 to 15 characters", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-                    break;
-                // Password should not contain any space
-                case 2:
-                    JOptionPane.showMessageDialog(null, "Password should not contain any space", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-                    break;
-                // Password should contain// at least one digit(0-9)
-                case 3:
-                    JOptionPane.showMessageDialog(null, "Password should contain at least one digit(0-9)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-                    break;
-//            // Password should contain at least one special character ( @, #, %, &, !, $ )
-//            case 4:
-//                JOptionPane.showMessageDialog(null, "Password should contain at least one special character", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-//                break;
-                // Password should contain at least one uppercase letter(A-Z)
-                case 5:
-                    JOptionPane.showMessageDialog(null, "Password should contain at least one uppercase letter(A-Z)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-                    break;
-                // Password should contain at least one lowercase letter(a-z)
-                case 6:
-                    JOptionPane.showMessageDialog(null, "Password should contain at least one lowercase letter(a-z)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
-                    break;
-            }
-        }
-    }
-
-    static class EmailExistException extends Exception {
-
-        public EmailExistException() {
-            emailExistLabel.setVisible(true);
-        }
-    }
-
-    public static boolean usernameCheck(String username) {
-        usernameExistLabel.setVisible(false);
+    public static boolean usernameExist(String username) {
+//        usernameExistLabel.setVisible(false);
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             PreparedStatement stmtChckUsr = con.prepareStatement("SELECT username FROM Users WHERE username=?");
             stmtChckUsr.setString(1, username);
 
             ResultSet rsChckUsr = stmtChckUsr.executeQuery();
-            if (rsChckUsr.next()) {
+            if (rsChckUsr.next() && !rsChckUsr.getString(1).equals(RentMyStuff.customer.getUsername())) {
                 throw new UsernameExistException();
             }
 
-            ApplicationMain.closeResultSet(rsChckUsr);
-            ApplicationMain.closeStatement(stmtChckUsr);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rsChckUsr);
+            RentMyStuff.closeStatement(stmtChckUsr);
+            RentMyStuff.stopConnection(con);
             return false;
 
         } catch (UsernameExistException inte) {
@@ -312,6 +273,37 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("Error in SQL Statement");
             return true;
         }
+    }
+
+    public static boolean emailExist(String email) {
+//        emailExistLabel.setVisible(false);
+        if (!email.equals("")) {
+            try {
+                Connection con = RentMyStuff.startConnection();
+
+                PreparedStatement stmtChckUsr = con.prepareStatement("SELECT email FROM Customers WHERE email=?");
+                stmtChckUsr.setString(1, email);
+
+                ResultSet rsChckUsr = stmtChckUsr.executeQuery();
+                if (rsChckUsr.next() && !rsChckUsr.getString(1).equals(RentMyStuff.customer.getEmail())) {
+                    throw new EmailExistException();
+                }
+
+                RentMyStuff.closeResultSet(rsChckUsr);
+                RentMyStuff.closeStatement(stmtChckUsr);
+                RentMyStuff.stopConnection(con);
+                return false;
+
+            } catch (EmailExistException inte) {
+                System.out.println("Email exist");
+                updateOK = false;
+                return true;
+            } catch (SQLException e) {
+                System.out.println("Error in SQL Statement");
+                return true;
+            }
+        }
+        return true;
     }
 
     // A utility function to check whether a password is valid or not
@@ -404,38 +396,115 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         return validPassword;
     }
 
-    public static boolean emailCheck(String email) {
-//        emailExistLabel.setVisible(false);
-        try {
-            Connection con = ApplicationMain.startConnection();
+    public static void removeMessages() {
+        usernameExistLabel.setVisible(false);
+        emailErrorPanel.setVisible(false);
+        emailExistLabel.setVisible(false);
+        emailEmptyLabel.setVisible(false);
+        errorFormatLabel.setVisible(false);
+    }
 
-            PreparedStatement stmtChckUsr = con.prepareStatement("SELECT email FROM Customers WHERE email=?");
-            stmtChckUsr.setString(1, email);
+    private void setUpSets() {
+        usernameSet = usernameField.getText();
+        firstnameSet = firstnameField.getText();
+        lastnameSet = lastnameField.getText();
+        addressLineSet = addressField.getText();
+        citySet = cityField.getText();
+        postalcodeString = postalcodeField.getText();
+        telephoneString = telephoneField.getText();
+        emailSet = emailField.getText().toLowerCase();
+        discountString = discountField.getText();
 
-            ResultSet rsChckUsr = stmtChckUsr.executeQuery();
-            if (rsChckUsr.next()) {
-                throw new EmailExistException();
-            }
+        if (postalcodeString.equals("")) {
+            postalcodeSet = 0;
+        } else if (postalcodeString.matches("[0-9]+")) {
+            postalcodeSet = Integer.parseInt(postalcodeString);
+        } else {
+            errorFormatLabel.setVisible(true);
+            throw new NumberFormatException();
+        }
 
-            ApplicationMain.closeResultSet(rsChckUsr);
-            ApplicationMain.closeStatement(stmtChckUsr);
-            ApplicationMain.stopConnection(con);
-            return false;
+        if (telephoneString.equals("")) {
+            telephoneSet = 0;
+        } else if (telephoneString.matches("[0-9]+")) {
+            telephoneSet = Integer.parseInt(telephoneString);
+        } else {
+            errorFormatLabel.setVisible(true);
+            throw new NumberFormatException();
+        }
 
-        } catch (EmailExistException inte) {
-            System.out.println("Email exist");
-            updateOK = false;
-            return true;
-        } catch (SQLException e) {
-            System.out.println("Error in SQL Statement");
-            return true;
+        if (discountString.equals("")) {
+            discountSet = 0;
+        } else if (discountString.matches("[0-9]+")) {
+            discountSet = Integer.parseInt(discountString);
+        } else {
+            errorFormatLabel.setVisible(true);
+            throw new NumberFormatException();
         }
     }
 
-    public static void removeMessages() {
-        usernameExistLabel.setVisible(false);
-        emailExistLabel.setVisible(false);
-        errorFormatLabel.setVisible(false);
+    static class UsernameExistException extends Exception {
+
+        public UsernameExistException() {
+            usernameExistLabel.setVisible(true);
+            updateOK = false;
+        }
+    }
+
+    static class EmailExistException extends Exception {
+
+        public EmailExistException() {
+            emailErrorPanel.setVisible(true);
+            emailExistLabel.setVisible(true);
+        }
+    }
+
+    static class EmailEmptyException extends Exception {
+
+        public EmailEmptyException() {
+            emailErrorPanel.setVisible(true);
+            emailEmptyLabel.setVisible(true);
+        }
+    }
+
+    // Class for user-defined InvalidPasswordException
+    static class InvalidPasswordException extends Exception {
+
+        int passwordConditionViolated = 0;
+
+        public InvalidPasswordException(int conditionViolated) {
+            super("Invalid Password");
+            passwordConditionViolated = conditionViolated;
+        }
+
+        public void showMessage() {
+            switch (passwordConditionViolated) {
+                // Password length should be between 8 to 15 characters
+                case 1:
+                    JOptionPane.showMessageDialog(null, "Password length should be between 8 to 15 characters", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+                    break;
+                // Password should not contain any space
+                case 2:
+                    JOptionPane.showMessageDialog(null, "Password should not contain any space", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+                    break;
+                // Password should contain// at least one digit(0-9)
+                case 3:
+                    JOptionPane.showMessageDialog(null, "Password should contain at least one digit(0-9)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+                    break;
+//            // Password should contain at least one special character ( @, #, %, &, !, $ )
+//            case 4:
+//                JOptionPane.showMessageDialog(null, "Password should contain at least one special character", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+//                break;
+                // Password should contain at least one uppercase letter(A-Z)
+                case 5:
+                    JOptionPane.showMessageDialog(null, "Password should contain at least one uppercase letter(A-Z)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+                    break;
+                // Password should contain at least one lowercase letter(a-z)
+                case 6:
+                    JOptionPane.showMessageDialog(null, "Password should contain at least one lowercase letter(a-z)", "Invalid Password", JOptionPane.ERROR_MESSAGE);
+                    break;
+            }
+        }
     }
 
     /**
@@ -471,10 +540,12 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         jLabel11 = new javax.swing.JLabel();
         updateButton = new javax.swing.JButton();
         createUserButton = new javax.swing.JButton();
-        emailExistLabel = new javax.swing.JLabel();
         updatePasswordButton = new javax.swing.JButton();
         usernameExistLabel = new javax.swing.JLabel();
         errorFormatLabel = new javax.swing.JLabel();
+        emailErrorPanel = new javax.swing.JPanel();
+        emailExistLabel = new javax.swing.JLabel();
+        emailEmptyLabel = new javax.swing.JLabel();
 
         jToggleButton1.setText("jToggleButton1");
 
@@ -544,11 +615,6 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         });
         getContentPane().add(createUserButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(6, 218, -1, -1));
 
-        emailExistLabel.setFont(new java.awt.Font("Lucida Grande", 0, 12)); // NOI18N
-        emailExistLabel.setForeground(new java.awt.Color(255, 0, 51));
-        emailExistLabel.setText("email already registered");
-        getContentPane().add(emailExistLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 200, -1, -1));
-
         updatePasswordButton.setText("Update Password");
         updatePasswordButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -566,71 +632,93 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
         errorFormatLabel.setText("error in a field format");
         getContentPane().add(errorFormatLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(470, 200, -1, -1));
 
+        emailErrorPanel.setLayout(new java.awt.CardLayout());
+
+        emailExistLabel.setFont(new java.awt.Font("Lucida Grande", 0, 12)); // NOI18N
+        emailExistLabel.setForeground(new java.awt.Color(255, 0, 51));
+        emailExistLabel.setText("email already registered");
+        emailErrorPanel.add(emailExistLabel, "card2");
+
+        emailEmptyLabel.setFont(new java.awt.Font("Lucida Grande", 0, 12)); // NOI18N
+        emailEmptyLabel.setForeground(new java.awt.Color(255, 0, 51));
+        emailEmptyLabel.setText("email cannot be empty");
+        emailErrorPanel.add(emailEmptyLabel, "card3");
+
+        getContentPane().add(emailErrorPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 200, 170, 30));
+
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void updateButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateButtonActionPerformed
+        removeMessages();
+        setUpSets();
         //default icon, custom title
-        int n = JOptionPane.showConfirmDialog(userUI, "Would you like to update " + ApplicationMain.customer.getUsername() + "?", "Confirm Update", JOptionPane.YES_NO_OPTION);
-        if (ApplicationMain.DEBUG) {
+        int n = JOptionPane.showConfirmDialog(userUI, "Would you like to update " + RentMyStuff.customer.getUsername() + "?", "Confirm Update", JOptionPane.YES_NO_OPTION);
+        if (RentMyStuff.DEBUG) {
             System.out.println("option decided ('0' means yes): " + n);
         }
         if (n == 0) {
-            String usernameSet = usernameField.getText();
-            String emailSet = emailField.getText();
 
             try {
-                Connection con = ApplicationMain.startConnection();
-                if (ApplicationMain.DEBUG) {
-                    System.out.println("getUsername: " + ApplicationMain.customer.getUsername());
+                Connection con = RentMyStuff.startConnection();
+                if (RentMyStuff.DEBUG) {
+                    System.out.println("getUsername: " + RentMyStuff.customer.getUsername());
                 }
                 // Username change
-                if (!usernameField.getText().equals(ApplicationMain.customer.getUsername())) {
-                    if (!usernameCheck(usernameSet)) {
-                        String newUsername = usernameSet;
+                if (!usernameSet.equals(RentMyStuff.customer.getUsername())) {
+                    updateOK = false;
+                    if (!usernameExist(usernameSet)) {
                         String changeUsernameSQL = "UPDATE Users SET users.username=? WHERE id_user=?";
                         try {
                             PreparedStatement stmtChgUsrnm = con.prepareStatement(changeUsernameSQL);
-                            stmtChgUsrnm.setString(1, newUsername);
-                            stmtChgUsrnm.setInt(2, ApplicationMain.customer.getId());
+                            stmtChgUsrnm.setString(1, usernameSet);
+                            stmtChgUsrnm.setInt(2, RentMyStuff.customer.getId());
 
                             stmtChgUsrnm.executeUpdate();
-                            ApplicationMain.closeStatement(stmtChgUsrnm);
+                            RentMyStuff.closeStatement(stmtChgUsrnm);
 
-                            ApplicationMain.customer.setUsername(newUsername);
-                            if (ApplicationMain.DEBUG) {
-                                System.out.println("New username: " + newUsername);
+                            RentMyStuff.customer.setUsername(usernameSet);
+                            if (RentMyStuff.DEBUG) {
+                                System.out.println("New username: " + usernameSet);
                             }
                             updateOK = true;
-                            if (!emailSet.equals(email)) {
-                                emailCheck(emailSet);
+                            justUpdatedUsername = true;
+                            if (!justUpdatedEmail) {
+                                if (!emailSet.equals(emailSQL)) {
+                                    emailExist(emailSet);
+                                }
                             }
                         } catch (SQLException ex) {
                             System.out.println("Cannot update username in Users");
                         }
                     }
-                } else if (usernameSet.equals(ApplicationMain.customer.getUsername())) {
+                } else if (usernameSet.equals(RentMyStuff.customer.getUsername())) {
                     updateOK = true;
                 }
 
-                if (!emailSet.equals(email)) {
-                    if (!emailCheck(emailField.getText())) {
+                if (!emailSet.equals(emailSQL) && !emailSet.equals("")) {
+                    updateOK = false;
+                    if (!emailExist(emailSet)) {
                         try {
                             PreparedStatement stmtUpdEmail = con.prepareStatement("UPDATE Customers SET email=? WHERE id_user=?");
-                            stmtUpdEmail.setString(1, emailField.getText());
-                            ApplicationMain.customer.setEmail(emailField.getText());
-                            stmtUpdEmail.setInt(2, ApplicationMain.customer.getId());
+                            stmtUpdEmail.setString(1, emailSet);
+                            RentMyStuff.customer.setEmail(emailSet);
+                            stmtUpdEmail.setInt(2, RentMyStuff.customer.getId());
 
                             stmtUpdEmail.executeUpdate();
-                            ApplicationMain.closeStatement(stmtUpdEmail);
+                            RentMyStuff.closeStatement(stmtUpdEmail);
                             System.out.println("Email updated");
                             updateOK = true;
-                            if (!usernameSet.equals(ApplicationMain.customer.getUsername())) {
-                                usernameCheck(usernameSet);
+                            justUpdatedEmail = true;
+                            if (!justUpdatedUsername) {
+                                if (!usernameSet.equals(RentMyStuff.customer.getUsername())) {
+                                    usernameExist(usernameSet);
+                                }
                             }
                         } catch (SQLIntegrityConstraintViolationException ice) {
                             System.out.println("Email exists - FATAL ERROR");
-                            emailExistLabel.setVisible(true);
+                            emailErrorPanel.setVisible(true);
+                            emailEmptyLabel.setVisible(true);
                         } catch (SQLException ex) {
                             System.out.println("Email not uploaded");
                             ex.printStackTrace();
@@ -638,70 +726,63 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                     }
                 }
 
-                if (!firstnameField.getText().equals(firstname) || !lastnameField.getText().equals(lastname)
-                        || !addressField.getText().equals(addressLine) || !cityField.getText().equals(city)
-                        || !postalcodeField.getText().equals(String.format("%05d", postalcode)) || !telephoneField.getText().equals(String.valueOf(telephone))
-                        || !discountField.getText().equals(String.valueOf(discount))) {
+                if (!firstnameSet.equals(firstnameSQL) || !lastnameSet.equals(lastnameSQL)
+                        || !addressLineSet.equals(addressLineSQL) || !citySet.equals(citySQL)
+                        || postalcodeSet != postalcodeSQL || !telephoneField.getText().equals(String.valueOf(telephoneSQL))
+                        || !discountField.getText().equals(String.valueOf(discountSQL))) {
                     updateOK = false;
                     // UPDATE Customers
                     String updateCustomerSQL = "UPDATE Customers SET firstname=?, lastname=?, address_line=?, city=?, postalcode=?, telephone=?, discount=?, last_update=NOW() WHERE id_user=?";
                     try {
                         PreparedStatement stmtUpdCustomer = con.prepareStatement(updateCustomerSQL);
-                        stmtUpdCustomer.setString(1, firstnameField.getText());
-                        stmtUpdCustomer.setString(2, lastnameField.getText());
-                        stmtUpdCustomer.setString(3, addressField.getText());
-                        stmtUpdCustomer.setString(4, cityField.getText());
-                        ApplicationMain.customer.setFirstname(firstnameField.getText());
-                        ApplicationMain.customer.setLastname(lastnameField.getText());
-                        ApplicationMain.customer.setAddressLine(addressField.getText());
-                        ApplicationMain.customer.setCity(cityField.getText());
-                        if (postalcodeField.getText().equals("")) {
-                            stmtUpdCustomer.setInt(5, 0);
-                        } else {
-                            stmtUpdCustomer.setInt(5, Integer.parseInt(postalcodeField.getText()));
-                            ApplicationMain.customer.setPostalcode(Integer.parseInt(postalcodeField.getText()));
-                        }
-                        if (telephoneField.getText().equals("")) {
-                            stmtUpdCustomer.setInt(6, 0);
-                        } else {
-                            stmtUpdCustomer.setInt(6, Integer.parseInt(telephoneField.getText()));
-                            ApplicationMain.customer.setTelephone(Integer.parseInt(telephoneField.getText()));
-                        }
+                        stmtUpdCustomer.setString(1, firstnameSet);
+                        stmtUpdCustomer.setString(2, lastnameSet);
+                        stmtUpdCustomer.setString(3, addressLineSet);
+                        stmtUpdCustomer.setString(4, citySet);
+                        stmtUpdCustomer.setInt(5, postalcodeSet);
+                        stmtUpdCustomer.setInt(6, telephoneSet);
+                        RentMyStuff.customer.setFirstname(firstnameSet);
+                        RentMyStuff.customer.setLastname(lastnameSet);
+                        RentMyStuff.customer.setAddressLine(addressLineSet);
+                        RentMyStuff.customer.setCity(citySet);
+                        RentMyStuff.customer.setPostalcode(postalcodeSet);
+                        RentMyStuff.customer.setTelephone(telephoneSet);
+
                         if (LoginUI.privileges == true) {
-                            int newDiscount = Integer.parseInt(discountField.getText());
-                            stmtUpdCustomer.setInt(7, newDiscount);
-                            ApplicationMain.customer.setDiscount(newDiscount);
+                            stmtUpdCustomer.setInt(7, discountSet);
+                            RentMyStuff.customer.setDiscount(discountSet);
                         } else {
-                            stmtUpdCustomer.setInt(7, ApplicationMain.customer.getDiscount());
+                            stmtUpdCustomer.setInt(7, RentMyStuff.customer.getDiscount());
                         }
 
                         // WHERE id_user is Customer selected
-                        stmtUpdCustomer.setInt(8, ApplicationMain.customer.getId());
+                        stmtUpdCustomer.setInt(8, RentMyStuff.customer.getId());
 
                         stmtUpdCustomer.executeUpdate();
-                        ApplicationMain.closeStatement(stmtUpdCustomer);
-                        if (ApplicationMain.DEBUG) {
-                            System.out.println("Data updated");
-                        }
+
+                        RentMyStuff.closeStatement(stmtUpdCustomer);
 
                         updateOK = true;
-                        if (!usernameSet.equals(ApplicationMain.customer.getUsername()) || !emailSet.equals(email)) {
-                            usernameCheck(usernameField.getText());
-                            emailCheck(emailField.getText());
+                        if (!justUpdatedUsername || !justUpdatedEmail) {
+                            if (!usernameSet.equals(RentMyStuff.customer.getUsername()) || !emailSet.equals(emailSQL)) {
+                                usernameExist(usernameField.getText());
+                                emailExist(emailField.getText());
+                            }
                         }
                     } catch (NumberFormatException ex) {
                         System.out.println("Cannot update customer data");
                         errorFormatLabel.setVisible(true);
                     } catch (SQLIntegrityConstraintViolationException ice) {
                         System.out.println("Email exists - FATAL ERROR");
-                        emailExistLabel.setVisible(true);
+                        emailErrorPanel.setVisible(true);
+                        emailEmptyLabel.setVisible(true);
                     } catch (SQLException ex) {
                         System.out.println("Data not uploaded");
                         ex.printStackTrace();
                     }
                 }
 
-                ApplicationMain.stopConnection(con);
+                RentMyStuff.stopConnection(con);
             } catch (SQLException ex) {
                 System.out.println("Data not uploaded");
                 ex.printStackTrace();
@@ -712,44 +793,31 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                 ApplicationUI.listCustomers();
                 ApplicationUI.setCustomerDataUI();
                 setVisible(false);
+                
+                if (RentMyStuff.DEBUG) {
+                    System.out.println("Data updated");
+                }
             }
         }
     }//GEN-LAST:event_updateButtonActionPerformed
 
     private void createUserButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createUserButtonActionPerformed
-        String usernameSet = usernameField.getText();
-        String firstnameSet = firstnameField.getText();
-        String lastnameSet = lastnameField.getText();
-        String addressLineSet = addressField.getText();
-        String citySet = cityField.getText();
-        String postalcodeString = postalcodeField.getText();
-        String telephoneString = telephoneField.getText();
-        int postalcodeSet = 0;
-        int telephoneSet = 0;
-        String emailSet = emailField.getText().toLowerCase();
-        String discountString = discountField.getText();
-        int discountSet = 0;
-
-        if (postalcodeString.matches("[0-9]+")) {
-            postalcodeSet = Integer.parseInt(postalcodeString);
-        }
-
-        if (telephoneString.matches("[0-9]+")) {
-            telephoneSet = Integer.parseInt(telephoneString);
-        }
-
-        if (discountString.matches("[0-9]+")) {
-            discountSet = Integer.parseInt(discountString);
-        }
+        removeMessages();
+        setUpSets();
 
         try {
-            boolean usernameCheck = usernameCheck(usernameSet);
-            boolean emailCheck = emailCheck(emailSet);
+            boolean usernameCheck = usernameExist(usernameSet);
+            boolean emailCheck;
+            if (!emailSet.equals("")) {
+                emailCheck = emailExist(emailSet);
+            } else {
+                emailCheck = false;
+            }
             passwordValidator(passwordField.getPassword());
 
-            if (!usernameCheck && !emailCheck) {
+            if (!usernameCheck && !emailCheck && !emailSet.equals("")) {
                 try {
-                    Connection con = ApplicationMain.startConnection();
+                    Connection con = RentMyStuff.startConnection();
                     con.setAutoCommit(false);
 
                     // if comes from SignUp = Find last ID for INSERT NEW USER
@@ -760,8 +828,8 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                         id_user_new = rsMaxId.getInt(1) + 1;
                         id_userCreator = id_user_new;
 
-                        ApplicationMain.closeResultSet(rsMaxId);
-                        ApplicationMain.closeStatement(lastId_stmt);
+                        RentMyStuff.closeResultSet(rsMaxId);
+                        RentMyStuff.closeStatement(lastId_stmt);
                         // Find ID from CURRENT USER CREATOR
                     } else {
                         PreparedStatement idCheck = con.prepareStatement("SELECT id_user FROM Users WHERE username=?");
@@ -775,10 +843,10 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                         rsMaxId.next();
                         id_user_new = rsMaxId.getInt(1) + 1;
 
-                        ApplicationMain.closeResultSet(rsId);
-                        ApplicationMain.closeResultSet(rsMaxId);
-                        ApplicationMain.closeStatement(idCheck);
-                        ApplicationMain.closeStatement(lastId_stmt);
+                        RentMyStuff.closeResultSet(rsId);
+                        RentMyStuff.closeResultSet(rsMaxId);
+                        RentMyStuff.closeStatement(idCheck);
+                        RentMyStuff.closeStatement(lastId_stmt);
                     }
 
                     // UPDATE 
@@ -795,7 +863,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                     stmtInsertCust.setString(4, addressLineSet);
                     stmtInsertCust.setInt(5, postalcodeSet);
                     stmtInsertCust.setString(6, citySet);
-                    stmtInsertCust.setString(7, emailSet);          // email set into SQL Statement
+                    stmtInsertCust.setString(7, emailSet);          // emailSQL set into SQL Statement
                     stmtInsertCust.setInt(8, telephoneSet);
                     if (LoginUI.privileges == true) {
                         stmtInsertCust.setInt(9, discountSet);
@@ -809,21 +877,21 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                     con.commit();
                     System.out.println("Data uploaded");
 
-                    // ApplicationMain#Customer Set
-                    ApplicationMain.customer.setId(id_user_new);
+                    // RentMyStuff#Customer Set
+                    RentMyStuff.customer.setId(id_user_new);
                     if (discountField.getText().equals("0")) {
-                        ApplicationMain.customer.setDiscount(0);
+                        RentMyStuff.customer.setDiscount(0);
                     } else {
-                        ApplicationMain.customer.setDiscount(discountSet);
+                        RentMyStuff.customer.setDiscount(discountSet);
                     }
-                    ApplicationMain.customer.setUsername(usernameSet);
-                    ApplicationMain.customer.setFirstname(firstnameSet);
-                    ApplicationMain.customer.setLastname(lastnameSet);
-                    ApplicationMain.customer.setAddressLine(addressLineSet);
-                    ApplicationMain.customer.setCity(citySet);
-                    ApplicationMain.customer.setPostalcode(postalcodeSet);
-                    ApplicationMain.customer.setEmail(emailSet);
-                    ApplicationMain.customer.setTelephone(telephoneSet);
+                    RentMyStuff.customer.setUsername(usernameSet);
+                    RentMyStuff.customer.setFirstname(firstnameSet);
+                    RentMyStuff.customer.setLastname(lastnameSet);
+                    RentMyStuff.customer.setAddressLine(addressLineSet);
+                    RentMyStuff.customer.setCity(citySet);
+                    RentMyStuff.customer.setPostalcode(postalcodeSet);
+                    RentMyStuff.customer.setEmail(emailSet);
+                    RentMyStuff.customer.setTelephone(telephoneSet);
 
                     ApplicationUI.listCustomers();
                     ApplicationUI.setCustomerDataUI();
@@ -839,9 +907,9 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                     // !!! usernameExistLabel check from userUI button
                     //                    usernameExistLabel.setVisible(true);
 
-                    ApplicationMain.closeStatement(stmtInsertUsr);
-                    ApplicationMain.closeStatement(stmtInsertCust);
-                    ApplicationMain.stopConnection(con);
+                    RentMyStuff.closeStatement(stmtInsertUsr);
+                    RentMyStuff.closeStatement(stmtInsertCust);
+                    RentMyStuff.stopConnection(con);
 
                 } catch (SQLIntegrityConstraintViolationException inte) {
                     inte.printStackTrace();
@@ -854,6 +922,9 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                     ex.printStackTrace();
                     System.out.println("Data not uploaded");
                 }
+            } else if (emailSet.equals("")) {
+                emailErrorPanel.setVisible(true);
+                emailEmptyLabel.setVisible(true);
             }
         } catch (InvalidPasswordException ipe) {
             System.out.println("Invalid password: " + passwordField.getPassword());
@@ -908,6 +979,8 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
     private static javax.swing.JButton createUserButton;
     private static javax.swing.JTextField discountField;
     private static javax.swing.JLabel discountLabel;
+    public static javax.swing.JLabel emailEmptyLabel;
+    private static javax.swing.JPanel emailErrorPanel;
     public static javax.swing.JLabel emailExistLabel;
     private static javax.swing.JTextField emailField;
     public static javax.swing.JLabel errorFormatLabel;

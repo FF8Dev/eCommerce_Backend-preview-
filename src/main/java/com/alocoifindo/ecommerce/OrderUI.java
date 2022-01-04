@@ -13,6 +13,7 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -66,16 +67,16 @@ import org.w3c.dom.Element;
 public class OrderUI extends javax.swing.JFrame {
 
     static String nif = "X5554778X";
-    
+
     static OrderChecklistTableModel orderTableModel = new OrderChecklistTableModel();
     static OrderUI orderUI = new OrderUI();
-    
+
     static Map<Integer, Double> totalPricesMap = new HashMap<Integer, Double>();
     static int counter = 0;
     static Map<Integer, Double> finalPricesUncheckMap = new HashMap<Integer, Double>();
     static List<Double> pricePerDayList = new ArrayList<>();
     static List<Integer> discountPerDayList = new ArrayList<>();
-    static double finalPriceSum = 0.0;
+    static double finalPriceSum;
     static double taxes;
     static double taxesFormat;
 
@@ -88,9 +89,14 @@ public class OrderUI extends javax.swing.JFrame {
     static DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
 
     static String xmlFile;
-    public static final String XML_DIR = "src/main/resources/xml_invoice/";
-    public static final String OUTPUT_DIR = "src/main/resources/output";
+    static String XML_FOLDER = orderUI.getClass().getClassLoader().getResource("xml_invoice").getPath();
+    static String OUTPUT_FOLDER = orderUI.getClass().getClassLoader().getResource("output").getPath();
 
+//    static final String XML_DIR = String.class.getResource("/xml_invoice").toString();
+//    static final String OUTPUT_DIR = String.class.getResource("/output").toString();
+//    final String XML_PATH = "/xml_invoice";
+//    public static final String XML_DIR = "src/main/resources/xml_invoice/";
+//    public static final String OUTPUT_DIR = "src/main/resources/output";
     /**
      * Creates new form OrderUI
      */
@@ -122,6 +128,7 @@ public class OrderUI extends javax.swing.JFrame {
         orderTable.getColumnModel().getColumn(6).setCellRenderer(centerRenderer);
         orderTable.getColumnModel().getColumn(7).setCellRenderer(centerRenderer);
 
+//        finalPriceField.setText(String.format("%.2f", finalPriceSum));
         // dispose by ESCAPE_KEY
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getRootPane().getActionMap();
@@ -203,46 +210,48 @@ public class OrderUI extends javax.swing.JFrame {
                 Vector rowData = (Vector) getDataVector().get(row);
                 rowData.set(0, (boolean) aValue);
                 fireTableCellUpdated(row, column);
-
-            } else if (4 == column) {                                          // Days
-                Vector rowData = (Vector) getDataVector().get(row);
-                int days = (Integer) aValue;
-                rowData.set(4, days);
-                System.out.println("Data entry in Days Cell: " + days);
-
-                System.out.println("setValueAt Row: " + row);
-                pricePerProduct = pricePerDayList.get(row);
-                double pricePerMoreDay = (pricePerProduct * ((100.0 - discountPerDayList.get(row)) / 100));
-                double pricePerDays = pricePerProduct + ((days - 1) * pricePerMoreDay);
-                double finalPriceWithCD = pricePerDays * ((100.0 - discountCustomer) / 100);
-
-                totalPricesMap.remove(row);
-                totalPricesMap.put(row, finalPriceWithCD);
-                finalPricesUncheckMap.put(row, finalPriceWithCD);
-
-                System.out.println("Value of product per Day: " + pricePerProduct);
-                System.out.println("Value of product per each MoreDay: " + pricePerMoreDay);
-
-                String pricePerProductDisplay = (String.format("%.2f", pricePerProduct)) + " €";
-                String pricePerDaysDisplay = (String.format("%.2f", pricePerDays)) + " €";
-                String finalPriceWithCDDisplay = (String.format("%.2f", finalPriceWithCD)) + " €";
-                String priceZeroDisplay = (String.format("%.2f", 00.00)) + " €";
-
-                if (days > 1) {
-                    rowData.set(6, pricePerDaysDisplay);
-                    rowData.set(8, finalPriceWithCDDisplay);
-                } else if (days <= 0) {
-                    rowData.set(6, priceZeroDisplay);
-                    rowData.set(8, priceZeroDisplay);
-                } else {
-                    rowData.set(6, pricePerProductDisplay);
-                    rowData.set(8, finalPriceWithCDDisplay);
-                }
-
                 updateFinalPrice();
                 updateTaxes();
-                fireTableCellUpdated(row, column);
-            }                                                                   // Price on days
+            }
+//            else if (4 == column) {                                          // Days
+//                Vector rowData = (Vector) getDataVector().get(row);
+//                int days = (Integer) aValue;
+//                rowData.set(4, days);
+//                System.out.println("Data entry in Days Cell: " + days);
+//
+//                System.out.println("setValueAt Row: " + row);
+//                pricePerProduct = pricePerDayList.get(row);
+//                double pricePerMoreDay = (pricePerProduct * ((100.0 - discountPerDayList.get(row)) / 100));
+//                double pricePerDays = pricePerProduct + ((days - 1) * pricePerMoreDay);
+//                double finalPriceWithCD = pricePerDays * ((100.0 - discountCustomer) / 100);
+//
+//                totalPricesMap.remove(row);
+//                totalPricesMap.put(row, finalPriceWithCD);
+//                finalPricesUncheckMap.put(row, finalPriceWithCD);
+//
+//                System.out.println("Value of product per Day: " + pricePerProduct);
+//                System.out.println("Value of product per each MoreDay: " + pricePerMoreDay);
+//
+//                String pricePerProductDisplay = (String.format("%.2f", pricePerProduct)) + " €";
+//                String pricePerDaysDisplay = (String.format("%.2f", pricePerDays)) + " €";
+//                String finalPriceWithCDDisplay = (String.format("%.2f", finalPriceWithCD)) + " €";
+//                String priceZeroDisplay = (String.format("%.2f", 00.00)) + " €";
+//
+//                if (days > 1) {
+//                    rowData.set(6, pricePerDaysDisplay);
+//                    rowData.set(8, finalPriceWithCDDisplay);
+//                } else if (days <= 0) {
+//                    rowData.set(6, priceZeroDisplay);
+//                    rowData.set(8, priceZeroDisplay);
+//                } else {
+//                    rowData.set(6, pricePerProductDisplay);
+//                    rowData.set(8, finalPriceWithCDDisplay);
+//                }
+//
+//                updateFinalPrice();
+//                updateTaxes();
+//                fireTableCellUpdated(row, column);
+//            }                                                                   // Price on days
         }
 
         // Listener of checkbox // (row, 0) = Select checkmark // (row, 2) = Product // (row, 5) = Price //
@@ -251,7 +260,7 @@ public class OrderUI extends javax.swing.JFrame {
             int row = e.getFirstRow();
             int col = e.getColumn();
             TableModel tableModel = (TableModel) e.getSource();
-            if (ApplicationMain.DEBUG) {
+            if (RentMyStuff.DEBUG) {
                 System.out.println("Order Row changed nº" + row);
             }
             if (col >= 0) {
@@ -260,77 +269,84 @@ public class OrderUI extends javax.swing.JFrame {
 
                 // if checkmark true
                 if (datacheck.equals(true)) {
-                    int daysRow = (Integer) tableModel.getValueAt(row, 3);
-                    int productRow = ApplicationMain.productsInOrder.get(row).getId();
+//                    int daysRow = (Integer) tableModel.getValueAt(row, 4);
+                    int productRow = RentMyStuff.productsInOrder.get(row).getId();
 
                     // INSERTO into SQL ´order_line´ Temp
                     try {
-                        //                    ApplicationMain.totalDays = (Integer)tableModel.getValueAt(row, 3);
-                        Connection con = ApplicationMain.startConnection();
+                        Connection con = RentMyStuff.startConnection();
 
-                        // !!! id_order_line not match the order num !!!
-                        PreparedStatement stmtIns = con.prepareStatement("INSERT IGNORE INTO order_line (id_product, id_order, days) VALUES (?, ?, ?)");
-                        System.out.println("Product ID insert ignore into order_line: " + productRow);
-                        System.out.println("Days Product insert by checkmark=true: " + daysRow);
+                        PreparedStatement stmtIns = con.prepareStatement("INSERT IGNORE INTO order_line (id_product, id_order) VALUES (?, ?)");
+                        if (RentMyStuff.DEBUG) {
+                            System.out.println("Product ID insert ignore into order_line: " + productRow);
+                        }
 
                         stmtIns.setInt(1, productRow);
-                        stmtIns.setInt(2, ApplicationMain.order.getId());
-                        stmtIns.setInt(3, daysRow);
+                        stmtIns.setInt(2, RentMyStuff.order.getId());
                         stmtIns.executeUpdate();
 
-                        ApplicationMain.closeStatement(stmtIns);
-                        ApplicationMain.stopConnection(con);
+                        RentMyStuff.closeStatement(stmtIns);
+                        RentMyStuff.stopConnection(con);
                     } catch (SQLException ex) {
                         System.out.println("order_line INSERT failed");
                         ex.printStackTrace();
                     }
 
                     if (listedProduct == true) {
-                        System.out.println("finalPricesUncheckMap: " + finalPricesUncheckMap.get(row));
                         totalPricesMap.put(row, finalPricesUncheckMap.get(row));
+                        if (RentMyStuff.DEBUG) {
+                            System.out.println("finalPricesUncheckMap: " + finalPricesUncheckMap.get(row));
+                            System.out.println("Value to put into order_line: " + totalPricesMap.get(row) + " (from row): " + row);
+                        }
+                        updateFinalPrice();
+                        updateTaxes();
                     }
 
                     // if checkmark false edit order_line
                 } else if (datacheck.equals(false)) {
-                    int productRow = ApplicationMain.productsInOrder.get(row).getId();
+                    int productRow = RentMyStuff.productsInOrder.get(row).getId();
 
                     // DELETE from SQL ´order_line´ Temp
                     try {
-                        Connection con = ApplicationMain.startConnection();
+                        Connection con = RentMyStuff.startConnection();
 
                         PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
-                        System.out.println("Product ID deleted from order_line: " + productRow);
+                        if (RentMyStuff.DEBUG) {
+                            System.out.println("Product ID deleted from order_line: " + productRow);
+                        }
 
                         stmtDel.setInt(1, productRow);
                         stmtDel.executeUpdate();
 
-                        ApplicationMain.closeStatement(stmtDel);
-                        ApplicationMain.stopConnection(con);
+                        RentMyStuff.closeStatement(stmtDel);
+                        RentMyStuff.stopConnection(con);
                     } catch (SQLException ex) {
                         System.out.println("order_line DELETE failed");
                         ex.printStackTrace();
                     }
-                    if (ApplicationMain.DEBUG) {
+                    if (RentMyStuff.DEBUG) {
                         System.out.println("Value to retrieve from order_line: " + totalPricesMap.get(row) + " (from row): " + row);
                     }
                     finalPricesUncheckMap.put(row, totalPricesMap.get(row));
                     totalPricesMap.remove(row);
                     listedProduct = true;
+                    updateFinalPrice();
+                    updateTaxes();
                 }
             }
-            updateFinalPrice();
-            updateTaxes();
+//            updateFinalPrice();
+//            updateTaxes();
         }
     }
 
     public static void orderTableView() {
         orderTableModel.setRowCount(0);
-        ApplicationMain.productsInOrder.clear();
+        RentMyStuff.productsInOrder.clear();
         pricePerDayList.clear();
         totalPricesMap.clear();
         counter = 0;
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             String selectProductsOrderSQL = "SELECT \n"
                     + "orders.id_tocustomer,\n"
@@ -350,7 +366,7 @@ public class OrderUI extends javax.swing.JFrame {
                     + "WHERE Orders.id_order=?";
 
             PreparedStatement stmtProductsOrder = con.prepareStatement(selectProductsOrderSQL);
-            stmtProductsOrder.setInt(1, ApplicationMain.order.getId());
+            stmtProductsOrder.setInt(1, RentMyStuff.order.getId());
 
             ResultSet rsProductsOrder = stmtProductsOrder.executeQuery();
 
@@ -359,9 +375,9 @@ public class OrderUI extends javax.swing.JFrame {
                 int idProduct = rsProductsOrder.getInt("id_product");
                 String idProductNamed = rsProductsOrder.getString("id_product_named");
                 String productName = rsProductsOrder.getString("Product");
-                int days = rsProductsOrder.getInt("total_days");
-                if (ApplicationMain.DEBUG) {
-                    System.out.println("Day retrieved from SQL to Table after SELECT: " + days);
+                int totalDays = rsProductsOrder.getInt("total_days");
+                if (RentMyStuff.DEBUG) {
+                    System.out.println("Day retrieved from SQL to Table after SELECT: " + totalDays);
                 }
 
                 // price_per_day
@@ -381,25 +397,25 @@ public class OrderUI extends javax.swing.JFrame {
                 // price_per_days (Before Customer Discount) & total_price_per_product
                 double priceBfCD = 00.00;
                 double totalPricePerProduct = 00.00;
-                if (days > 1) {
-                    priceBfCD = pricePerDay + ((pricePerDay * (days - 1)) * ((100.0 - discountPerDay) / 100));
+                if (totalDays > 1) {
+                    priceBfCD = pricePerDay + ((pricePerDay * (totalDays - 1)) * ((100.0 - discountPerDay) / 100));
                     totalPricePerProduct = priceBfCD * ((100.0 - discountCustomer) / 100);
                 } else {
-                    priceBfCD = pricePerDay * days;
+                    priceBfCD = pricePerDay * totalDays;
                     totalPricePerProduct = priceBfCD * ((100.0 - discountCustomer) / 100);
                 }
                 String priceBfCDDisplay = String.format("%.2f", priceBfCD) + " €";
                 String totalPricePerProductDisplay = String.format("%.2f", totalPricePerProduct) + " €";
                 totalPricesMap.put(counter, totalPricePerProduct);
                 counter++;
-                ApplicationMain.productsInOrder.add(new Product(idProduct, idProductNamed, productName, pricePerDay, discountPerDay));
-                Object[] orderRow = {true, idProductNamed, productName, pricePerDayDisplay, days, discountPerDayDisplay, priceBfCDDisplay, discountCustomerDisplay, totalPricePerProductDisplay};
+                RentMyStuff.productsInOrder.add(new Product(idProduct, idProductNamed, productName, pricePerDay, discountPerDay));
+                Object[] orderRow = {true, idProductNamed, productName, pricePerDayDisplay, totalDays, discountPerDayDisplay, priceBfCDDisplay, discountCustomerDisplay, totalPricePerProductDisplay};
                 orderTableModel.addRow(orderRow);
 
             }
-            ApplicationMain.closeResultSet(rsProductsOrder);
-            ApplicationMain.closeStatement(stmtProductsOrder);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rsProductsOrder);
+            RentMyStuff.closeStatement(stmtProductsOrder);
+            RentMyStuff.stopConnection(con);
 
         } catch (SQLException ex) {
             System.out.println("Problem in SQL Table Represent");
@@ -411,7 +427,7 @@ public class OrderUI extends javax.swing.JFrame {
         updateTaxes();
     }
 
-    public static void updateFinalPrice() {
+    private static void updateFinalPrice() {
         finalPriceSum = 0.0;
         for (int i = 0; i < orderTableModel.getRowCount(); i++) {
             if (totalPricesMap.get(i) != null) {
@@ -421,7 +437,7 @@ public class OrderUI extends javax.swing.JFrame {
         finalPriceField.setText(String.format("%.2f", finalPriceSum));
     }
 
-    public static void updateTaxes() {
+    private static void updateTaxes() {
         taxes = finalPriceSum * 0.21;
         taxesFormat = Double.parseDouble(String.format("%.2f", taxes));
         taxesField.setText(String.valueOf(taxesFormat));
@@ -437,9 +453,9 @@ public class OrderUI extends javax.swing.JFrame {
         String emailSet = "";
 
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
             PreparedStatement stmtDataChck = con.prepareStatement("SELECT * FROM Customers WHERE id_user=?");
-            stmtDataChck.setInt(1, ApplicationMain.customer.getId());
+            stmtDataChck.setInt(1, RentMyStuff.customer.getId());
             ResultSet rsDataChck = stmtDataChck.executeQuery();
             rsDataChck.next();
 
@@ -451,21 +467,21 @@ public class OrderUI extends javax.swing.JFrame {
             telephoneSet = rsDataChck.getInt("telephone");
             emailSet = rsDataChck.getString("email");
 
-            if (ApplicationMain.DEBUG) {
+            if (RentMyStuff.DEBUG) {
                 System.out.println("--- User Data Check ---");
-                System.out.println(firstnameSet);
-                System.out.println(lastnameSet);
-                System.out.println(addressLineSet);
-                System.out.println(citySet);
-                System.out.println(postalcodeSet);
-                System.out.println(telephoneSet);
-                System.out.println(emailSet);
+                System.out.println("Firstname: " + firstnameSet);
+                System.out.println("Lastname: " + lastnameSet);
+                System.out.println("Address Line: " + addressLineSet);
+                System.out.println("City: " + citySet);
+                System.out.println("PostalCode: " + postalcodeSet);
+                System.out.println("Telephone: " + telephoneSet);
+                System.out.println("Email: " + emailSet);
                 System.out.println("------------------------");
             }
 
-            ApplicationMain.closeResultSet(rsDataChck);
-            ApplicationMain.closeStatement(stmtDataChck);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rsDataChck);
+            RentMyStuff.closeStatement(stmtDataChck);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Couldn't check customer info");
@@ -479,79 +495,83 @@ public class OrderUI extends javax.swing.JFrame {
         }
     }
 
-    private void updateOrderCheck() {
+    private boolean updateOrderCheck() {
         String updateOrderStatusSQL = "UPDATE Orders SET shipment_status='Waiting' WHERE id_order=?";
         String updateLastOrderSQL = "UPDATE Orders SET total_days=?, start_rent_date=?, end_rent_date=?, amount=?, id_tocustomer=? WHERE id_order=?";
         String updateOrderLineSQL = "UPDATE order_line SET id_order=?";
         if (!sameOrder) {
             try {
-                Connection con = ApplicationMain.startConnection();
+                Connection con = RentMyStuff.startConnection();
 
                 PreparedStatement stmtUpdateOrder = con.prepareStatement(updateOrderStatusSQL);
-                stmtUpdateOrder.setInt(1, ApplicationMain.order.getId());
+                stmtUpdateOrder.setInt(1, RentMyStuff.order.getId());
                 stmtUpdateOrder.executeUpdate();
 
-                ApplicationMain.closeStatement(stmtUpdateOrder);
-                ApplicationMain.stopConnection(con);
+                RentMyStuff.closeStatement(stmtUpdateOrder);
+                RentMyStuff.stopConnection(con);
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("SQL shipment_status not updated");
             }
+            return true;
         } else {
             int newOrderCheck = JOptionPane.showOptionDialog(null, "Would you want to update last order or a make new order?", "New order detected",
                     JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionsSameOrder, optionsSameOrder[0]);
             if (newOrderCheck == 0) {
                 System.out.println("Choose Update Order");
                 sameOrder = true;
-                ApplicationMain.order.setId(ApplicationMain.order.getId() - 1);
-                
+                RentMyStuff.order.setId(RentMyStuff.order.getId() - 1);
+
                 try {
-                    Connection con = ApplicationMain.startConnection();
+                    Connection con = RentMyStuff.startConnection();
 
                     PreparedStatement stmtUpdateOrderLine = con.prepareStatement(updateOrderLineSQL);
-                    stmtUpdateOrderLine.setInt(1, ApplicationMain.order.getId());
+                    stmtUpdateOrderLine.setInt(1, RentMyStuff.order.getId());
                     stmtUpdateOrderLine.executeUpdate();
 
                     PreparedStatement stmtUpdateLastOrder = con.prepareStatement(updateLastOrderSQL);
-                    stmtUpdateLastOrder.setInt(1, ApplicationMain.totalDays);
-                    stmtUpdateLastOrder.setDate(2, Date.valueOf(ApplicationMain.order.getStartDate()));
-                    stmtUpdateLastOrder.setDate(3, Date.valueOf(ApplicationMain.order.getEndDate()));
-                    stmtUpdateLastOrder.setDouble(4, ApplicationMain.order.getAmount());
-                    stmtUpdateLastOrder.setInt(5, ApplicationMain.customer.getId());
-                    stmtUpdateLastOrder.setInt(6, ApplicationMain.order.getId());
+                    stmtUpdateLastOrder.setInt(1, RentMyStuff.totalDays);
+                    stmtUpdateLastOrder.setDate(2, Date.valueOf(RentMyStuff.order.getStartDate()));
+                    stmtUpdateLastOrder.setDate(3, Date.valueOf(RentMyStuff.order.getEndDate()));
+                    stmtUpdateLastOrder.setDouble(4, RentMyStuff.order.getAmount());
+                    stmtUpdateLastOrder.setInt(5, RentMyStuff.customer.getId());
+                    stmtUpdateLastOrder.setInt(6, RentMyStuff.order.getId());
                     stmtUpdateLastOrder.executeUpdate();
 
-                    ApplicationMain.closeStatement(stmtUpdateOrderLine);
-                    ApplicationMain.closeStatement(stmtUpdateLastOrder);
-                    ApplicationMain.stopConnection(con);
-                    ApplicationUI.setOrderLastUpdate(ApplicationMain.order.getId());
+                    RentMyStuff.closeStatement(stmtUpdateOrderLine);
+                    RentMyStuff.closeStatement(stmtUpdateLastOrder);
+                    RentMyStuff.stopConnection(con);
+                    ApplicationUI.setOrderLastUpdate(RentMyStuff.order.getId());
                 } catch (SQLException e) {
                     e.printStackTrace();
                     System.out.println("SQL last order not updated");
                 }
-            } else {
+                return true;
+            } else if (newOrderCheck == 1) {
                 System.out.println("Choose New Order");
                 sameOrder = false;
                 try {
-                    Connection con = ApplicationMain.startConnection();
+                    Connection con = RentMyStuff.startConnection();
 
                     PreparedStatement stmtUpdateOrder = con.prepareStatement(updateOrderStatusSQL);
-                    stmtUpdateOrder.setInt(1, ApplicationMain.order.getId());
+                    stmtUpdateOrder.setInt(1, RentMyStuff.order.getId());
                     stmtUpdateOrder.executeUpdate();
 
-                    ApplicationMain.closeStatement(stmtUpdateOrder);
-                    ApplicationMain.stopConnection(con);
+                    RentMyStuff.closeStatement(stmtUpdateOrder);
+                    RentMyStuff.stopConnection(con);
                 } catch (SQLException e) {
                     e.printStackTrace();
                     System.out.println("SQL new order not updated");
                 }
+                return true;
             }
+            return false;
         }
     }
 
-    public static void createDocXML() {
+    public static void createDocXML() throws URISyntaxException {
         // XML document build
-        xmlFile = String.format("%06d", ApplicationMain.order.getId()) + ".xml";
+        xmlFile = String.format("%06d", RentMyStuff.order.getId()) + ".xml";
         try {
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
@@ -563,11 +583,11 @@ public class OrderUI extends javax.swing.JFrame {
             doc.appendChild(invoiceElm);
 
             //set attribute to invoice element
-            invoiceElm.setAttribute("id", String.format("%06d", ApplicationMain.order.getId()));
+            invoiceElm.setAttribute("id", String.format("%06d", RentMyStuff.order.getId()));
 
             //date element
             Element dateElm = doc.createElement("date");
-            dateElm.appendChild(doc.createTextNode(ApplicationMain.order.getCreationDate().format(dateFormat)));
+            dateElm.appendChild(doc.createTextNode(RentMyStuff.order.getCreationDate().format(dateFormat)));
             invoiceElm.appendChild(dateElm);
 
             //invoice-to elements
@@ -576,22 +596,22 @@ public class OrderUI extends javax.swing.JFrame {
 
             //firstname element
             Element nameCstm = doc.createElement("name");
-            nameCstm.appendChild(doc.createTextNode(ApplicationMain.customer.getFirstname() + " " + ApplicationMain.customer.getLastname()));
+            nameCstm.appendChild(doc.createTextNode(RentMyStuff.customer.getFirstname() + " " + RentMyStuff.customer.getLastname()));
             invoiceToElm.appendChild(nameCstm);
 
             //address-line element
             Element addressLineCstm = doc.createElement("address-line");
-            addressLineCstm.appendChild(doc.createTextNode(ApplicationMain.customer.getAddressLine()));
+            addressLineCstm.appendChild(doc.createTextNode(RentMyStuff.customer.getAddressLine()));
             invoiceToElm.appendChild(addressLineCstm);
 
             //city element
             Element cityCstm = doc.createElement("city");
-            cityCstm.appendChild(doc.createTextNode(ApplicationMain.customer.getCity()));
+            cityCstm.appendChild(doc.createTextNode(RentMyStuff.customer.getCity()));
             invoiceToElm.appendChild(cityCstm);
 
             //city element
             Element postalcodeCstm = doc.createElement("postalcode");
-            postalcodeCstm.appendChild(doc.createTextNode(String.format("%05d", ApplicationMain.customer.getPostalcode())));
+            postalcodeCstm.appendChild(doc.createTextNode(String.format("%05d", RentMyStuff.customer.getPostalcode())));
             invoiceToElm.appendChild(postalcodeCstm);
 
             //country element
@@ -601,12 +621,12 @@ public class OrderUI extends javax.swing.JFrame {
 
             //email element
             Element emailCstm = doc.createElement("email");
-            emailCstm.appendChild(doc.createTextNode(ApplicationMain.customer.getEmail()));
+            emailCstm.appendChild(doc.createTextNode(RentMyStuff.customer.getEmail()));
             invoiceToElm.appendChild(emailCstm);
 
             //telephone element
             Element telephoneCstm = doc.createElement("telephone");
-            telephoneCstm.appendChild(doc.createTextNode(String.valueOf(ApplicationMain.customer.getTelephone())));
+            telephoneCstm.appendChild(doc.createTextNode(String.valueOf(RentMyStuff.customer.getTelephone())));
             invoiceToElm.appendChild(telephoneCstm);
 
             //invoice-from elements
@@ -663,16 +683,16 @@ public class OrderUI extends javax.swing.JFrame {
 
             //start-rent-day element
             Element startDayElm = doc.createElement("start-rent-day");
-            startDayElm.appendChild(doc.createTextNode(String.valueOf(ApplicationMain.order.getStartDate().format(dateFormat))));
+            startDayElm.appendChild(doc.createTextNode(String.valueOf(RentMyStuff.order.getStartDate().format(dateFormat))));
             datesElm.appendChild(startDayElm);
 
             //end-rent-day element
             Element endDayElm = doc.createElement("end-rent-day");
-            endDayElm.appendChild(doc.createTextNode(String.valueOf(ApplicationMain.order.getEndDate().format(dateFormat))));
+            endDayElm.appendChild(doc.createTextNode(String.valueOf(RentMyStuff.order.getEndDate().format(dateFormat))));
             datesElm.appendChild(endDayElm);
 
             try {
-                Connection con = ApplicationMain.startConnection();
+                Connection con = RentMyStuff.startConnection();
 
                 String selectProductsOrderSQL = "SELECT \n"
                         + "id_product_named,\n"
@@ -693,7 +713,7 @@ public class OrderUI extends javax.swing.JFrame {
                         + "ORDER BY id_product_named ASC";
 
                 PreparedStatement stmtProductsOrder = con.prepareStatement(selectProductsOrderSQL);
-                stmtProductsOrder.setInt(1, ApplicationMain.order.getId());
+                stmtProductsOrder.setInt(1, RentMyStuff.order.getId());
 
                 ResultSet rsProductsOrder = stmtProductsOrder.executeQuery();
 
@@ -757,9 +777,9 @@ public class OrderUI extends javax.swing.JFrame {
                     totalPricePerProductElm.appendChild(doc.createTextNode(String.format("%.2f", totalPricePerProduct)));
                     productElm.appendChild(totalPricePerProductElm);
                 }
-                ApplicationMain.closeResultSet(rsProductsOrder);
-                ApplicationMain.closeStatement(stmtProductsOrder);
-                ApplicationMain.stopConnection(con);
+                RentMyStuff.closeResultSet(rsProductsOrder);
+                RentMyStuff.closeStatement(stmtProductsOrder);
+                RentMyStuff.stopConnection(con);
 
             } catch (SQLException ex) {
                 System.out.println("Problem in SQL Order retrieve");
@@ -783,10 +803,10 @@ public class OrderUI extends javax.swing.JFrame {
             Transformer transformer = transformerFactory.newTransformer();
             DOMSource source = new DOMSource(doc);
 
-            StreamResult result = new StreamResult(new File(XML_DIR + xmlFile));
+            StreamResult result = new StreamResult(new File(XML_FOLDER + xmlFile));
             transformer.transform(source, result);
 
-            if (ApplicationMain.DEBUG) {
+            if (RentMyStuff.DEBUG) {
                 System.out.println("XML Invoice Done");
             }
 
@@ -797,17 +817,17 @@ public class OrderUI extends javax.swing.JFrame {
         }
     }
 
-    public static void convertToPDF() throws IOException, FOPException, TransformerException {
+    public static void convertToPDF() throws IOException, FOPException, TransformerException, URISyntaxException {
         // the XSL FO file
-        File xsltFile = new File(XML_DIR + "invoice_template.xsl");
+        File xsltFile = new File(XML_FOLDER + "/invoice_template.xsl");
         // the XML file which provides the input
-        StreamSource xmlSource = new StreamSource(new File(XML_DIR + xmlFile));
+        StreamSource xmlSource = new StreamSource(new File(XML_FOLDER + xmlFile));
         // create an instance of fop factory
         FopFactory fopFactory = FopFactory.newInstance(new File(".").toURI());
         // a user agent is needed for transformation
         FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
         // Setup output
-        OutputStream out = new java.io.FileOutputStream(OUTPUT_DIR + "/invoice_" + String.format("%06d", ApplicationMain.order.getId()) + ".pdf");
+        OutputStream out = new java.io.FileOutputStream(OUTPUT_FOLDER + "/invoice_" + String.format("%06d", RentMyStuff.order.getId()) + ".pdf");
 
         try {
             // Construct fop with desired output format
@@ -833,10 +853,9 @@ public class OrderUI extends javax.swing.JFrame {
     //Cross platform solution to view a PDF file
     public void pdfViewer() {
         try {
-
-            File pdfFile = new File(OUTPUT_DIR + "/invoice_" + String.format("%06d", ApplicationMain.order.getId()) + ".pdf");
+            File pdfFile = new File(OUTPUT_FOLDER + "/invoice_" + String.format("%06d", RentMyStuff.order.getId()) + ".pdf");
             if (pdfFile.exists()) {
-                
+
                 if (Desktop.isDesktopSupported()) {
                     Desktop.getDesktop().open(pdfFile);
                 } else {
@@ -857,23 +876,23 @@ public class OrderUI extends javax.swing.JFrame {
         if (!sameOrder) {
             // New Invoice
             try {
-                Connection con = ApplicationMain.startConnection();
+                Connection con = RentMyStuff.startConnection();
 
                 PreparedStatement stmtMaxInvId = con.prepareStatement("SELECT MAX(id_invoice) AS id_invoice FROM Invoices");
                 ResultSet rsInvId = stmtMaxInvId.executeQuery();
                 rsInvId.next();
                 invoiceId = rsInvId.getInt("id_invoice") + 1;
-                
+
                 PreparedStatement stmtInsInvoice = con.prepareStatement("INSERT INTO Invoices(id_invoice, nif, invoice_status, tax_amount, issue_date, id_order) VALUES(?, '" + nif + "', 'Issued', ?, NOW(), ?)");
                 stmtInsInvoice.setDouble(1, invoiceId);
                 stmtInsInvoice.setDouble(2, taxesFormat);
-                stmtInsInvoice.setInt(3, ApplicationMain.order.getId());
+                stmtInsInvoice.setInt(3, RentMyStuff.order.getId());
                 stmtInsInvoice.executeUpdate();
 
-                ApplicationMain.closeResultSet(rsInvId);
-                ApplicationMain.closeStatement(stmtMaxInvId);
-                ApplicationMain.closeStatement(stmtInsInvoice);
-                ApplicationMain.stopConnection(con);
+                RentMyStuff.closeResultSet(rsInvId);
+                RentMyStuff.closeStatement(stmtMaxInvId);
+                RentMyStuff.closeStatement(stmtInsInvoice);
+                RentMyStuff.stopConnection(con);
 
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -882,27 +901,28 @@ public class OrderUI extends javax.swing.JFrame {
         } else {
             // Update last Invoice
             try {
-                Connection con = ApplicationMain.startConnection();
-                
+                Connection con = RentMyStuff.startConnection();
+
                 PreparedStatement stmtUpdInvoice = con.prepareStatement("UPDATE Invoices SET tax_amount=?, issue_date=NOW() WHERE id_order=?");
                 stmtUpdInvoice.setDouble(1, taxesFormat);
-                stmtUpdInvoice.setInt(2, ApplicationMain.order.getId());
+                stmtUpdInvoice.setInt(2, RentMyStuff.order.getId());
                 stmtUpdInvoice.executeUpdate();
-                
-                ApplicationMain.closeStatement(stmtUpdInvoice);
-                ApplicationMain.stopConnection(con);
+
+                RentMyStuff.closeStatement(stmtUpdInvoice);
+                RentMyStuff.stopConnection(con);
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("Couldn't Update invoice from Invoices");
             }
         }
     }
-/**
- * This method is called from within the constructor to initialize the form.
- * WARNING: Do NOT modify this code. The content of this method is always
- * regenerated by the Form Editor.
- */
-@SuppressWarnings("unchecked")
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -952,7 +972,7 @@ public class OrderUI extends javax.swing.JFrame {
 
         jLabel5.setText("€");
 
-        customerLabel.setText(ApplicationMain.customer.getUsername());
+        customerLabel.setText(com.alocoifindo.ecommerce.RentMyStuff.customer.getUsername());
 
         jLabel1.setText("Customer:");
 
@@ -1038,35 +1058,44 @@ public class OrderUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void invoiceButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_invoiceButtonActionPerformed
+        if (RentMyStuff.DEBUG) {
+            System.out.println("Prepared XML Folder: " + XML_FOLDER);
+        }
         // Checker of completed profile to create invoice.
         data_remain = userDataCheck();
-        
-        
+
         // if profile not updated, open UserUI
         if (!data_remain) {
-            updateOrderCheck();
-            createDocXML();
-            try {
-                convertToPDF();
-                pdfViewer();
+            if (updateOrderCheck()) {
+                try {
+                    createDocXML();
+                } catch (URISyntaxException ex) {
+                    ex.printStackTrace();
+                }
+                try {
+                    convertToPDF();
+                    pdfViewer();
+                } catch (IOException ioe) {
+                    ioe.printStackTrace();
+                } catch (FOPException fope) {
+                    fope.printStackTrace();
+                } catch (TransformerException te) {
+                    te.printStackTrace();
+                } catch (URISyntaxException ex) {
+                    ex.printStackTrace();
+                }
                 insertInvoice();
                 orderUI.setVisible(false);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            } catch (FOPException fope) {
-                fope.printStackTrace();
-            } catch (TransformerException te) {
-                te.printStackTrace();
+                ApplicationUI.setOrderLastUpdate(RentMyStuff.order.getId());
+                // Preparation for next order
+                sameOrder = true;
+                ApplicationUI.setOrderId();
+                ApplicationUI.updateOrderLine();
             }
-            ApplicationUI.setOrderLastUpdate(ApplicationMain.order.getId());
-            // Preparation for next order
-            sameOrder = true;
-            ApplicationUI.setOrderId();
-            ApplicationUI.updateOrderLine();
         } else {
             int n = JOptionPane.showConfirmDialog(orderUI, "User data needed for invoice, would you like to update?", "Complete profile for Invoice", JOptionPane.YES_NO_OPTION);
-            if (ApplicationMain.DEBUG) {
-                System.out.println("Ansewer to user_data_update: " + n);
+            if (RentMyStuff.DEBUG) {
+                System.out.println("Answer to user_data_update: " + n);
             }
             if (n == 0) {
                 UserUI.removeMessages();
@@ -1097,25 +1126,17 @@ public class OrderUI extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(OrderUI
-
-.class
-.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(OrderUI.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(OrderUI
-
-.class
-.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(OrderUI.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(OrderUI
-
-.class
-.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(OrderUI.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(OrderUI
-
-.class
-.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(OrderUI.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 

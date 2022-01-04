@@ -76,7 +76,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     DateListenerEnd dateListenerEnd = new DateListenerEnd();
     JButton datePickerButtonStart;
     JButton datePickerButtonEnd;
-    ImageIcon calendarIcon = new ImageIcon("src/main/resources/calendar-20.png");
+    ImageIcon calendarIcon = new ImageIcon(getClass().getResource("/calendar-20.png"));
     
     /**
      * Creates new form ApplicationUI
@@ -93,13 +93,14 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             productAddButton.setVisible(false);
         }
         
-        int customerId = ApplicationMain.customer.getId();
-        if (ApplicationMain.DEBUG) {
+        int customerId = RentMyStuff.customer.getId();
+        if (RentMyStuff.DEBUG) {
             System.out.println("!!!: " + customerId);
         }
-        ApplicationMain.order.setCreationDate(LocalDate.now());
-        ApplicationMain.order.setStartDate(LocalDate.now());
-        ApplicationMain.order.setEndDate(LocalDate.now());
+        RentMyStuff.order.setCreationDate(LocalDate.now());
+        RentMyStuff.order.setStartDate(LocalDate.now());
+        RentMyStuff.order.setEndDate(LocalDate.now());
+        RentMyStuff.order.setAmount(0.0);
         setOrderId();
 
         // customerID starts at 2 in admin session
@@ -111,8 +112,8 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             customerSelect.setVisible(false);
             customerSelect.getItemAt(customerId);
 
-            // !!! retrieve discountField if discount == 0
-            if (ApplicationMain.customer.getDiscount() == 0) {
+            // !!! retrieve discountField if discountSQL == 0
+            if (RentMyStuff.customer.getDiscount() == 0) {
                 discountLabel.setVisible(false);
                 discountField.setVisible(false);
             }
@@ -165,13 +166,13 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
     @Override
     public void windowClosing(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("WindowListener method called: windowClosing.");
         }
         String tempStatus;
 
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             PreparedStatement stmtSelTempOrd = con.prepareStatement("SELECT shipment_status FROM Orders WHERE id_order = ?");
             stmtSelTempOrd.setInt(1, idOrder);
@@ -187,16 +188,16 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 stmtDelTempOrd.setInt(1, idOrder);
                 stmtDelTempOrd.executeUpdate();
 
-                if (ApplicationMain.DEBUG) {
+                if (RentMyStuff.DEBUG) {
                     System.out.println("DELETED actual Temporal Order");
                 }
-                ApplicationMain.closeStatement(stmtDelTempOrdLn);
-                ApplicationMain.closeStatement(stmtDelTempOrd);
+                RentMyStuff.closeStatement(stmtDelTempOrdLn);
+                RentMyStuff.closeStatement(stmtDelTempOrd);
             }
 
-            ApplicationMain.closeResultSet(rsTempOrd);
-            ApplicationMain.closeStatement(stmtSelTempOrd);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rsTempOrd);
+            RentMyStuff.closeStatement(stmtSelTempOrd);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException ex) {
             System.out.println("Cannot DELETE Temporary Order");
             ex.printStackTrace();
@@ -205,7 +206,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
     @Override
     public void windowClosed(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             //This will only be seen on standard output.
             System.out.println("ApplicationUI: windowClosed.");
         }
@@ -213,49 +214,49 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
     @Override
     public void windowOpened(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("ApplicationUI: windowOpened.");
         }
     }
 
     @Override
     public void windowIconified(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("ApplicationUI: windowIconified.");
         }
     }
 
     @Override
     public void windowDeiconified(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("ApplicationUI: windowDeiconified.");
         }
     }
 
     @Override
     public void windowActivated(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("ApplicationUI: windowActivated.");
         }
     }
 
     @Override
     public void windowDeactivated(WindowEvent e) {
-        if (ApplicationMain.DEBUGwin) {
+        if (RentMyStuff.DEBUGwin) {
             System.out.println("ApplicationUI: windowDeactivated.");
         }
     }
 
     public static void setOrderLastUpdate(int idOrder) {
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
             
             PreparedStatement stmtUpdOrd = con.prepareStatement("UPDATE Orders SET last_update=NOW() WHERE id_order=?");
             stmtUpdOrd.setInt(1, idOrder);
             stmtUpdOrd.executeUpdate();
             
-            ApplicationMain.closeStatement(stmtUpdOrd);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeStatement(stmtUpdOrd);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Couldn't update NOW() in last_update Order");
@@ -264,7 +265,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     
     public static void setOrderId() {
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             PreparedStatement stmtRstOrderLine = con.prepareStatement("DELETE FROM order_line");
             PreparedStatement stmtRstIncrem = con.prepareStatement("ALTER TABLE order_line AUTO_INCREMENT = 1");
@@ -278,37 +279,38 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             ResultSet rsOrdId = stmtOrderId.executeQuery();
             rsOrdId.next();
             idOrder = rsOrdId.getInt("id_order") + 1;
-            ApplicationMain.order.setId(idOrder);
-            if (ApplicationMain.DEBUG) {
+            RentMyStuff.order.setId(idOrder);
+            if (RentMyStuff.DEBUG) {
                 System.out.println("next order_id: " + idOrder);
             }
 
-            PreparedStatement stmtOrdCreate = con.prepareStatement("INSERT INTO orders VALUES (?, NOW(), 1, ?, ?, null, 'Not Finished', NOW(), ?, ?)");
+            PreparedStatement stmtOrdCreate = con.prepareStatement("INSERT INTO orders VALUES (?, NOW(), 1, ?, ?, ?, 'Not Finished', NOW(), ?, ?)");
             stmtOrdCreate.setInt(1, idOrder);
             int userOrder;
             // if user cames from SignUp
             if (LoginUI.idUser == 0) {
-                userOrder = ApplicationMain.customer.getId();
+                userOrder = RentMyStuff.customer.getId();
             } else {
                 userOrder = LoginUI.idUser;
             }
-            stmtOrdCreate.setDate(2, Date.valueOf(ApplicationMain.order.getStartDate()));
-            stmtOrdCreate.setDate(3, Date.valueOf(ApplicationMain.order.getEndDate()));
-            stmtOrdCreate.setInt(4, userOrder);
-            stmtOrdCreate.setInt(5, ApplicationMain.customer.getId());
-            if (ApplicationMain.DEBUG) {
+            stmtOrdCreate.setDate(2, Date.valueOf(RentMyStuff.order.getStartDate()));
+            stmtOrdCreate.setDate(3, Date.valueOf(RentMyStuff.order.getEndDate()));
+            stmtOrdCreate.setDouble(4, RentMyStuff.order.getAmount());
+            stmtOrdCreate.setInt(5, userOrder);
+            stmtOrdCreate.setInt(6, RentMyStuff.customer.getId());
+            if (RentMyStuff.DEBUG) {
                 System.out.println("idUser (0 if cames from signUp): " + LoginUI.idUser);
-                System.out.println("idUser by ApplicationMain#customer: " + ApplicationMain.customer.getId());
+                System.out.println("idUser by ApplicationMain#customer: " + RentMyStuff.customer.getId());
             }
             stmtOrdCreate.executeUpdate();
 
-            ApplicationMain.closeResultSet(rsOrdId);
-            ApplicationMain.closeStatement(stmtOrderId);
-            ApplicationMain.closeStatement(stmtRstOrderLine);
-            ApplicationMain.closeStatement(stmtRstIncrem);
-            ApplicationMain.closeStatement(stmtRstOrderNotFinished);
-            ApplicationMain.closeStatement(stmtOrdCreate);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rsOrdId);
+            RentMyStuff.closeStatement(stmtOrderId);
+            RentMyStuff.closeStatement(stmtRstOrderLine);
+            RentMyStuff.closeStatement(stmtRstIncrem);
+            RentMyStuff.closeStatement(stmtRstOrderNotFinished);
+            RentMyStuff.closeStatement(stmtOrdCreate);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException ex) {
             System.out.println("Cannot DELETE FROM order_line TABLE OR SELECT MAX(id_order) OR INSERT NEW order");
             ex.printStackTrace();
@@ -322,7 +324,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         customers.clear();
 
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
             String selectCustomersSQL = "SELECT * FROM Users NATURAL JOIN Customers WHERE users.id_user = customers.id_user ORDER BY id_user ASC";
             PreparedStatement stmtCustomers = con.prepareStatement(selectCustomersSQL);
             ResultSet rsCustomers = stmtCustomers.executeQuery();
@@ -347,9 +349,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 customersComboBoxModel.addElement(customer.getUsername());
             }
             
-            ApplicationMain.closeResultSet(rsCustomers);
-            ApplicationMain.closeStatement(stmtCustomers);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rsCustomers);
+            RentMyStuff.closeStatement(stmtCustomers);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException ex) {
             System.out.println("SQL Error in ComboBox");
             ex.printStackTrace();
@@ -357,12 +359,12 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     }
 
     public static void setCustomerDataUI() {
-        customerLabel.setText(ApplicationMain.customer.getUsername());
-        discountField.setText(String.valueOf(ApplicationMain.customer.getDiscount()));
+        customerLabel.setText(RentMyStuff.customer.getUsername());
+        discountField.setText(String.valueOf(RentMyStuff.customer.getDiscount()));
         if (LoginUI.privileges) {
-            customerSelect.setSelectedItem(ApplicationMain.customer.getUsername());
-            if (ApplicationMain.DEBUG) {
-                System.out.println("Selected Customer Item: " + ApplicationMain.customer.getUsername());
+            customerSelect.setSelectedItem(RentMyStuff.customer.getUsername());
+            if (RentMyStuff.DEBUG) {
+                System.out.println("Selected Customer Item: " + RentMyStuff.customer.getUsername());
             }
         }
         customerSelect.addItemListener(comboListener);
@@ -374,16 +376,16 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         public void itemStateChanged(ItemEvent event) {
             if (event.getStateChange() == ItemEvent.SELECTED) {
                 Object item = event.getItem();
-                // add to tempUsername username of list & to ApplicationMain.customer
+                // add to tempUsername username of list & to RentMyStuff.customer
                 tempUsername = item.toString();
-                ApplicationMain.customer.setUsername(tempUsername);
-                if (ApplicationMain.DEBUG) {
+                RentMyStuff.customer.setUsername(tempUsername);
+                if (RentMyStuff.DEBUG) {
                     System.out.println("tempUsername: " + tempUsername);
                 }
                 OrderUI.customerLabel.setText(tempUsername);
 
                 try {
-                    Connection con = ApplicationMain.startConnection();
+                    Connection con = RentMyStuff.startConnection();
                     String selectDiscountsSQL = "SELECT id_user, username, discount, firstname, lastname, address_line, city, postalcode, telephone, email"
                             + " FROM Users NATURAL JOIN Customers WHERE users.id_user = customers.id_user AND username=? ORDER BY id_user ASC;";
                     PreparedStatement stmtDiscounts = con.prepareStatement(selectDiscountsSQL);
@@ -391,56 +393,56 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     ResultSet rsCustSelected = stmtDiscounts.executeQuery();
                     rsCustSelected.next();
 
-                    ApplicationMain.customer.setId(rsCustSelected.getInt("id_user"));
-                    ApplicationMain.customer.setDiscount(rsCustSelected.getInt("discount"));
-                    ApplicationMain.customer.setFirstname(rsCustSelected.getString("firstname"));
-                    ApplicationMain.customer.setLastname(rsCustSelected.getString("lastname"));
-                    ApplicationMain.customer.setAddressLine(rsCustSelected.getString("address_line"));
-                    ApplicationMain.customer.setCity(rsCustSelected.getString("city"));
-                    ApplicationMain.customer.setPostalcode(rsCustSelected.getInt("postalcode"));
-                    ApplicationMain.customer.setTelephone(rsCustSelected.getInt("telephone"));
-                    ApplicationMain.customer.setEmail(rsCustSelected.getString("email"));
+                    RentMyStuff.customer.setId(rsCustSelected.getInt("id_user"));
+                    RentMyStuff.customer.setDiscount(rsCustSelected.getInt("discount"));
+                    RentMyStuff.customer.setFirstname(rsCustSelected.getString("firstname"));
+                    RentMyStuff.customer.setLastname(rsCustSelected.getString("lastname"));
+                    RentMyStuff.customer.setAddressLine(rsCustSelected.getString("address_line"));
+                    RentMyStuff.customer.setCity(rsCustSelected.getString("city"));
+                    RentMyStuff.customer.setPostalcode(rsCustSelected.getInt("postalcode"));
+                    RentMyStuff.customer.setTelephone(rsCustSelected.getInt("telephone"));
+                    RentMyStuff.customer.setEmail(rsCustSelected.getString("email"));
 
-                    if (ApplicationMain.DEBUG) {
-                        System.out.println("TempId customer selected: " + ApplicationMain.customer.getId());
-                        System.out.println("Discount customer selected: " + ApplicationMain.customer.getDiscount());
+                    if (RentMyStuff.DEBUG) {
+                        System.out.println("TempId customer selected: " + RentMyStuff.customer.getId());
+                        System.out.println("Discount customer selected: " + RentMyStuff.customer.getDiscount());
                     }
 
                     String updateOrderSQL = "UPDATE Orders SET id_tocustomer=? WHERE id_order=?";
                     PreparedStatement stmtUpdOrd = con.prepareStatement(updateOrderSQL);
-                    stmtUpdOrd.setInt(1, ApplicationMain.customer.getId());
+                    stmtUpdOrd.setInt(1, RentMyStuff.customer.getId());
                     stmtUpdOrd.setInt(2, idOrder);
                     stmtUpdOrd.executeUpdate();
 
-                    // set discount in fieldUI
-                    discountField.setText(String.valueOf(ApplicationMain.customer.getDiscount()));
+                    // set discountSQL in fieldUI
+                    discountField.setText(String.valueOf(RentMyStuff.customer.getDiscount()));
 
                     //update product prices on table by customer
                     for (int i = 0; i < productsTable.getRowCount(); i++) {
                         double pricePerProduct = pricePerDayMap.get(i);
-                        double priceWDiscount = pricePerProduct * ((100.0 - ApplicationMain.customer.getDiscount()) / 100);
+                        double priceWDiscount = pricePerProduct * ((100.0 - RentMyStuff.customer.getDiscount()) / 100);
 
                         String priceWDiscountSymbol = (String.format("%.2f", priceWDiscount)) + " €";
-                        if (ApplicationMain.DEBUG) {
+                        if (RentMyStuff.DEBUG) {
                             System.out.println("PriceWDiscountSymbol(" + i + "): " + priceWDiscountSymbol);
                         }
-                        // to not update order_line if discount modified
+                        // to not update order_line if discountSQL modified
                         updatedDiscount = true;
                         // check 5 corresponds with priceWDiscountSymbol or 6 --> after add idProductNamed
                         productsTableModel.setValueAt(priceWDiscountSymbol, i, 6);
                     }
                     
-                    ApplicationMain.closeResultSet(rsCustSelected);
-                    ApplicationMain.closeStatement(stmtUpdOrd);
-                    ApplicationMain.closeStatement(stmtDiscounts);
-                    ApplicationMain.stopConnection(con);
+                    RentMyStuff.closeResultSet(rsCustSelected);
+                    RentMyStuff.closeStatement(stmtUpdOrd);
+                    RentMyStuff.closeStatement(stmtDiscounts);
+                    RentMyStuff.stopConnection(con);
                     
                 } catch (SQLException ex) {
                     System.out.println("Error while setting Discount percentage OR Update id_toCustomer");
                     ex.printStackTrace();
                 }
-                setOrderLastUpdate(ApplicationMain.order.getId());
-                updateTotalPrice(ApplicationMain.totalDays);
+                setOrderLastUpdate(RentMyStuff.order.getId());
+                updateTotalPrice(RentMyStuff.totalDays);
             }
         }
     }
@@ -484,7 +486,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             // Disallow days beforeToday and after4Months
             if ((date.isBefore(today)) || (date.isAfter(endDate))) {
                 return false;
-            } else if (date.isBefore(ApplicationMain.order.getStartDate())) {
+            } else if (date.isBefore(RentMyStuff.order.getStartDate())) {
                 return false;
             }
             // Allow all other days.
@@ -497,40 +499,40 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         @Override
         public void dateChanged(DateChangeEvent dce) {
             LocalDate newDate = dce.getNewDate();
-            ApplicationMain.order.setStartDate(newDate);
-            int adjustedDays = (Math.abs(ApplicationMain.order.getEndDate().compareTo(newDate))) + 1;
+            RentMyStuff.order.setStartDate(newDate);
+            int adjustedDays = (Math.abs(RentMyStuff.order.getEndDate().compareTo(newDate))) + 1;
             
             
-            if (ApplicationMain.order.getEndDate().compareTo(newDate) == 0) {
+            if (RentMyStuff.order.getEndDate().compareTo(newDate) == 0) {
                 daysField.setText("1");
-            } else if (ApplicationMain.order.getEndDate().compareTo(newDate) <= 0) {
+            } else if (RentMyStuff.order.getEndDate().compareTo(newDate) <= 0) {
                 daysField.setText("0");
                 adjustedDays = 0;
                 
             } else {
                 daysField.setText(String.valueOf(adjustedDays));
             }
-            ApplicationMain.totalDays = adjustedDays;
+            RentMyStuff.totalDays = adjustedDays;
             updateTotalPrice(adjustedDays);
             
             Connection con;
             try {
-                con = ApplicationMain.startConnection();
+                con = RentMyStuff.startConnection();
                 String updateDateStartSQL = "UPDATE Orders SET start_rent_date=?, total_days=? WHERE id_order=?";
                 
                 PreparedStatement stmtDateStart = con.prepareStatement(updateDateStartSQL);
                 stmtDateStart.setDate(1, Date.valueOf(dce.getNewDate()));
                 stmtDateStart.setInt(2, adjustedDays);
-                stmtDateStart.setInt(3, ApplicationMain.order.getId());
+                stmtDateStart.setInt(3, RentMyStuff.order.getId());
                 stmtDateStart.executeUpdate();
                 
-                ApplicationMain.closeStatement(stmtDateStart);
-                ApplicationMain.stopConnection(con);
+                RentMyStuff.closeStatement(stmtDateStart);
+                RentMyStuff.stopConnection(con);
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("Error while updating Date in Orders");
             }
-            setOrderLastUpdate(ApplicationMain.order.getId());
+            setOrderLastUpdate(RentMyStuff.order.getId());
         }
 
     }
@@ -540,39 +542,39 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         @Override
         public void dateChanged(DateChangeEvent dce) {
             LocalDate newDate = dce.getNewDate();
-            ApplicationMain.order.setEndDate(newDate);
-            int adjustedDays = (Math.abs(ApplicationMain.order.getStartDate().compareTo(newDate)) + 1);
+            RentMyStuff.order.setEndDate(newDate);
+            int adjustedDays = (Math.abs(RentMyStuff.order.getStartDate().compareTo(newDate)) + 1);
             
             
-            if (Math.abs(ApplicationMain.order.getStartDate().compareTo(newDate)) == 0) {
+            if (Math.abs(RentMyStuff.order.getStartDate().compareTo(newDate)) == 0) {
                 daysField.setText("1");
-            } else if (Math.abs(ApplicationMain.order.getStartDate().compareTo(newDate)) <= 0) {
+            } else if (Math.abs(RentMyStuff.order.getStartDate().compareTo(newDate)) <= 0) {
                 daysField.setText("0");
                 adjustedDays = 0;
             } else {
                 daysField.setText(String.valueOf(adjustedDays));
             }
-            ApplicationMain.totalDays = adjustedDays;
+            RentMyStuff.totalDays = adjustedDays;
             updateTotalPrice(adjustedDays);
             
             Connection con;
             try {
-                con = ApplicationMain.startConnection();
+                con = RentMyStuff.startConnection();
                 String updateDateEndSQL = "UPDATE Orders SET end_rent_date=?, total_days=? WHERE id_order=?";
                 
                 PreparedStatement stmtDateEnd = con.prepareStatement(updateDateEndSQL);
                 stmtDateEnd.setDate(1, Date.valueOf(dce.getNewDate()));
                 stmtDateEnd.setInt(2, adjustedDays);
-                stmtDateEnd.setInt(3, ApplicationMain.order.getId());
+                stmtDateEnd.setInt(3, RentMyStuff.order.getId());
                 stmtDateEnd.executeUpdate();
                 
-                ApplicationMain.closeStatement(stmtDateEnd);
-                ApplicationMain.stopConnection(con);
+                RentMyStuff.closeStatement(stmtDateEnd);
+                RentMyStuff.stopConnection(con);
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("Error while updating Date in Orders");
             }
-            setOrderLastUpdate(ApplicationMain.order.getId());
+            setOrderLastUpdate(RentMyStuff.order.getId());
         }
         
     }
@@ -620,13 +622,13 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             if (aValue instanceof Boolean && column == 0) {
                 Vector rowData = (Vector) getDataVector().get(row);
                 rowData.set(0, (boolean) aValue);
-                if (ApplicationMain.DEBUG) {
+                if (RentMyStuff.DEBUG) {
                     System.out.println("Pressed Button makes: " + aValue.toString());
                 }
                 // to update order_line if selected
                 updatedDiscount = false;
                 fireTableCellUpdated(row, column);
-                setOrderLastUpdate(ApplicationMain.order.getId());
+                setOrderLastUpdate(RentMyStuff.order.getId());
             }
             if (column == 6) {
                 Vector rowData = (Vector) getDataVector().get(row);
@@ -641,7 +643,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             int row = e.getFirstRow();
             TableModel model = (TableModel) e.getSource();
 
-            if (ApplicationMain.DEBUG) {
+            if (RentMyStuff.DEBUG) {
                 System.out.println("Row ProductTable changed nº" + row);
             }
 
@@ -668,30 +670,30 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
                     // INSERTO into SQL ´order_line´ Temp
                     try {
-                        Connection con = ApplicationMain.startConnection();
+                        Connection con = RentMyStuff.startConnection();
 
                         PreparedStatement stmtIns = con.prepareStatement("INSERT INTO order_line (id_product, id_order) VALUES (?, ?);");
-                        if (ApplicationMain.DEBUG) {
-                            System.out.println("id_product insert into order_line: " + ApplicationMain.products.get(row).getId());
+                        if (RentMyStuff.DEBUG) {
+                            System.out.println("id_product insert into order_line: " + RentMyStuff.products.get(row).getId());
                         }
 
-                        stmtIns.setInt(1, ApplicationMain.products.get(row).getId());
-                        stmtIns.setInt(2, ApplicationMain.order.getId());
+                        stmtIns.setInt(1, RentMyStuff.products.get(row).getId());
+                        stmtIns.setInt(2, RentMyStuff.order.getId());
                         stmtIns.executeUpdate();
 
-                        ApplicationMain.closeStatement(stmtIns);
-                        ApplicationMain.stopConnection(con);
+                        RentMyStuff.closeStatement(stmtIns);
+                        RentMyStuff.stopConnection(con);
                     } catch (SQLException ex) {
                         System.out.println("order_line INSERT failed");
                         ex.printStackTrace();
                     }
 
                     // Final Price set
-                    if (ApplicationMain.DEBUG) {
+                    if (RentMyStuff.DEBUG) {
                         System.out.println("setValueAt Row: " + row);
                     }
                     selectedProduct.put(row, true);
-                    updateTotalPrice(ApplicationMain.totalDays);
+                    updateTotalPrice(RentMyStuff.totalDays);
 
                     // activate remove item values
                     listedProduct = true;
@@ -715,17 +717,17 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
                         // DELETE from SQL ´order_line´ Temp
                         try {
-                            Connection con = ApplicationMain.startConnection();
+                            Connection con = RentMyStuff.startConnection();
 
                             PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
-                            System.out.println("Product ID deleted from order_line: " + ApplicationMain.products.get(row).getId());
-                            stmtDel.setInt(1, ApplicationMain.products.get(row).getId());
+                            System.out.println("Product ID deleted from order_line: " + RentMyStuff.products.get(row).getId());
+                            stmtDel.setInt(1, RentMyStuff.products.get(row).getId());
                             stmtDel.executeUpdate();
 
-                            updateTotalPrice(ApplicationMain.totalDays);
+                            updateTotalPrice(RentMyStuff.totalDays);
                             
-                            ApplicationMain.closeStatement(stmtDel);
-                            ApplicationMain.stopConnection(con);
+                            RentMyStuff.closeStatement(stmtDel);
+                            RentMyStuff.stopConnection(con);
                         } catch (SQLException ex) {
                             System.out.println("order_line DELETE failed");
                             ex.printStackTrace();
@@ -733,7 +735,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
                         // Final Price set
                         selectedProduct.put(row, false);
-                        updateTotalPrice(ApplicationMain.totalDays);
+                        updateTotalPrice(RentMyStuff.totalDays);
                     }
                 }
             }
@@ -743,7 +745,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     private static void productsTableView() {
 
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             String selectProductsSQL = "SELECT id_product, id_product_named, Image, CONCAT(brand, \" \", model_name) AS Product, Category, Keywords, price_per_day, discount_per_days FROM Products";
             PreparedStatement stmtProducts = con.prepareStatement(selectProductsSQL);
@@ -779,26 +781,26 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 pricePerDayMap.put(counter, pricePerDay);
                 discountPerDayMap.put(counter, discountPerDay);
 
-                ApplicationMain.products.add(new Product(idProduct, idProductNamed, productName, pricePerDay, discountPerDay));
+                RentMyStuff.products.add(new Product(idProduct, idProductNamed, productName, pricePerDay, discountPerDay));
 
                 Object[] productRow = {false, idProductNamed, productName, icon, category, keywords, pricePerDayDisplay, discountPerDayDisplay};
                 productsTableModel.addRow(productRow);
                 counter++;
             }
-            ApplicationMain.closeResultSet(rsProducts);
-            ApplicationMain.closeStatement(stmtProducts);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rsProducts);
+            RentMyStuff.closeStatement(stmtProducts);
+            RentMyStuff.stopConnection(con);
 
-            // Apply discount prices by customer
+            // Apply discountSQL prices by customer
             for (int i = 0; i < productsTable.getRowCount(); i++) {
                 double pricePerProduct = pricePerDayMap.get(i);
-                double priceWDiscount = pricePerProduct * ((100.0 - ApplicationMain.customer.getDiscount()) / 100);
+                double priceWDiscount = pricePerProduct * ((100.0 - RentMyStuff.customer.getDiscount()) / 100);
 
                 String priceWDiscountSymbol = (String.format("%.2f", priceWDiscount)) + " €";
-                if (ApplicationMain.DEBUG) {
+                if (RentMyStuff.DEBUG) {
                     System.out.println("PriceWDiscountSymbol(" + i + "): " + priceWDiscountSymbol);
                 }
-                // to not update order_line if discount modified
+                // to not update order_line if discountSQL modified
                 updatedDiscount = true;
                 productsTableModel.setValueAt(priceWDiscountSymbol, i, 6);
             }
@@ -825,56 +827,56 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 //        @Override
 //        public void stateChanged(ChangeEvent e) {
 //            JSpinner spinner = (JSpinner) e.getSource();
-//            ApplicationMain.totalDays = (int) spinner.getValue();
+//            RentMyStuff.totalDays = (int) spinner.getValue();
 //
 //            try {
-//                Connection con = ApplicationMain.startConnection();
+//                Connection con = RentMyStuff.startConnection();
 //
 //                String updDaysOrderSQL = "UPDATE Orders SET total_days=? WHERE id_order=?";
 //                String updDaysOrderLineSQL = "UPDATE order_line SET days=? WHERE id_order=?";
 //                PreparedStatement stmtUpdDay = con.prepareStatement(updDaysOrderSQL);
-//                stmtUpdDay.setInt(1, ApplicationMain.totalDays);
+//                stmtUpdDay.setInt(1, RentMyStuff.totalDays);
 //                stmtUpdDay.setInt(2, idOrder);
 //                stmtUpdDay.executeUpdate();
-//                System.out.println("totalDays in Order: " + ApplicationMain.totalDays);
+//                System.out.println("totalDays in Order: " + RentMyStuff.totalDays);
 //                PreparedStatement stmtUpdDayLine = con.prepareStatement(updDaysOrderLineSQL);
-//                stmtUpdDayLine.setInt(1, ApplicationMain.totalDays);
+//                stmtUpdDayLine.setInt(1, RentMyStuff.totalDays);
 //                stmtUpdDayLine.setInt(2, idOrder);
 //                stmtUpdDayLine.executeUpdate();
 //
-//                ApplicationMain.closeStatement(stmtUpdDay);
-//                ApplicationMain.closeStatement(stmtUpdDayLine);
-//                ApplicationMain.stopConnection(con);
+//                RentMyStuff.closeStatement(stmtUpdDay);
+//                RentMyStuff.closeStatement(stmtUpdDayLine);
+//                RentMyStuff.stopConnection(con);
 //            } catch (SQLException ex) {
 //                System.out.println("Cannot UPDATE total_days in Order");
 //                ex.printStackTrace();
 //            }
-//            updateTotalPrice(ApplicationMain.totalDays);
+//            updateTotalPrice(RentMyStuff.totalDays);
 //        }
 //    }
 
     public static void updateOrderLine() {
         String updateOrderLineSQL = "INSERT INTO order_line(id_product, id_order) VALUES (?, ?)"; 
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
             for (int i = 0; i < productsTableModel.getRowCount(); i++) {
                 if (selectedProduct.get(i) != null && selectedProduct.get(i) != false) {
                     PreparedStatement stmtUpdateOrderLine = con.prepareStatement(updateOrderLineSQL);
                     stmtUpdateOrderLine.setInt(1, i+1);
-                    stmtUpdateOrderLine.setInt(2, ApplicationMain.order.getId());
+                    stmtUpdateOrderLine.setInt(2, RentMyStuff.order.getId());
                     stmtUpdateOrderLine.executeUpdate();
                 
-                    ApplicationMain.closeStatement(stmtUpdateOrderLine);
+                    RentMyStuff.closeStatement(stmtUpdateOrderLine);
                 }
             }
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Couldn't update order_line New Products");
         }
     }
     
-    public static void updateTotalPrice(int days) {
+    private static void updateTotalPrice(int days) {
         double finalPriceSum = 0.0;
         for (int i = 0; i < productsTableModel.getRowCount(); i++) {
             if (selectedProduct.get(i) != null && selectedProduct.get(i) != false) {
@@ -886,24 +888,24 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 } else {
                     pricePerDays = pricePerProduct + ((days - 1) * pricePerMoreDay);
                 }
-                double finalPriceWithCD = pricePerDays * ((100.0 - ApplicationMain.customer.getDiscount()) / 100);
+                double finalPriceWithCD = pricePerDays * ((100.0 - RentMyStuff.customer.getDiscount()) / 100);
                 finalPriceSum += finalPriceWithCD;
             }
         }
         String finalPriceSumFormat = String.format("%.2f", finalPriceSum);
-        ApplicationMain.order.setAmount(Double.parseDouble(finalPriceSumFormat));
+        RentMyStuff.order.setAmount(Double.parseDouble(finalPriceSumFormat));
         totalPriceField.setText(finalPriceSumFormat);
 
         // update Order amount
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
             PreparedStatement stmtAmnt = con.prepareStatement("UPDATE Orders SET amount=? WHERE id_order=?");
             stmtAmnt.setDouble(1, Double.parseDouble(finalPriceSumFormat));
             stmtAmnt.setInt(2, idOrder);
             stmtAmnt.executeUpdate();
             
-            ApplicationMain.closeStatement(stmtAmnt);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeStatement(stmtAmnt);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Cannot update total amount of the Order");
@@ -998,7 +1000,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         daysSpinner.setValue(1);
 
         customerLabel.setFont(new java.awt.Font("Birthstone Bounce", 0, 26)); // NOI18N
-        customerLabel.setText(ApplicationMain.customer.getUsername() + "    ");
+        customerLabel.setText(RentMyStuff.customer.getUsername() + "    ");
 
         datePanel.setMaximumSize(new java.awt.Dimension(277, 94));
         datePanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
@@ -1167,7 +1169,6 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
     private void invoiceButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_invoiceButtonActionPerformed
         InvoicesUI.invoiceTableView();
-        
     }//GEN-LAST:event_invoiceButtonActionPerformed
 
     private void shippingButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_shippingButtonActionPerformed

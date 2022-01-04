@@ -10,6 +10,8 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -45,7 +47,7 @@ import javax.swing.table.TableModel;
  *
  * @author facundoferreyra
  */
-public class ShipmentUI extends javax.swing.JFrame {
+public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
 
     static ShipmentTableModel shipmentTableModel = new ShipmentTableModel();
     static ShipmentUI shipmentUI = new ShipmentUI();
@@ -55,12 +57,15 @@ public class ShipmentUI extends javax.swing.JFrame {
     static DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
     static DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm:ss").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault());
     
+    static int orderIdTemp = 0;
+    
     /**
      * Creates new form ShipmentUI
      */
     public ShipmentUI() {
         initComponents();
         setLocationRelativeTo(null);
+        addWindowListener(this);
 
         shipmentTable.setRowHeight(25);
         TableColumnModel columnModel = shipmentTable.getColumnModel();
@@ -89,6 +94,7 @@ public class ShipmentUI extends javax.swing.JFrame {
         // dispose by ESCAPE_KEY
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getRootPane().getActionMap();
+        ActionMap amTable = shipmentTable.getRootPane().getActionMap();
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
         am.put("cancel", new AbstractAction() {
             @Override
@@ -98,6 +104,58 @@ public class ShipmentUI extends javax.swing.JFrame {
         });
     }
 
+    @Override
+    public void windowClosing(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            //This will only be seen on standard output.
+            System.out.println("ShipmentUI: windowClosing.");
+        }
+    }
+
+    @Override
+    public void windowClosed(WindowEvent e) {
+        shipmentTable.removeEditor();
+        if (RentMyStuff.DEBUGwin) {
+            //This will only be seen on standard output.
+            System.out.println("ShipmentUI: windowClosed.");
+        }
+    }
+
+    @Override
+    public void windowOpened(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("ShipmentUI: windowOpened.");
+        }
+    }
+
+    @Override
+    public void windowIconified(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("ShipmentUI: windowIconified.");
+        }
+    }
+
+    @Override
+    public void windowDeiconified(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("ShipmentUI: windowDeiconified.");
+        }
+    }
+
+    @Override
+    public void windowActivated(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("ShipmentUI: windowActivated.");
+        }
+    }
+
+    @Override
+    public void windowDeactivated(WindowEvent e) {
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("ShipmentUI: windowDeactivated.");
+        }
+    }
+    
     private static class HeaderRenderer implements TableCellRenderer {
 
         DefaultTableCellRenderer renderer;
@@ -142,6 +200,7 @@ public class ShipmentUI extends javax.swing.JFrame {
      * Custom class for adding elements in the JComboBox.
      */
     public class StatusComboBoxEditor extends AbstractCellEditor implements TableCellEditor, ActionListener {
+        
         String status;
         int row;
         // Declare a model that is used for adding the elements to the `Combo box`
@@ -152,9 +211,10 @@ public class ShipmentUI extends javax.swing.JFrame {
 
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            orderIdTemp = shipmentTableModel.getRowCount() - row;
             if (value instanceof String) {
                 this.status = (String) value;
-                this.row = row + 1;
+                this.row = orderIdTemp;
             }
 
             JComboBox statusComboBox = new JComboBox(optionsCombo);
@@ -183,15 +243,15 @@ public class ShipmentUI extends javax.swing.JFrame {
         String updateStatusSQL = "UPDATE Orders SET shipment_status=? WHERE id_order=?";
         
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
             
             PreparedStatement stmtUpdStatus = con.prepareStatement(updateStatusSQL);
             stmtUpdStatus.setString(1, status);
             stmtUpdStatus.setInt(2, orderId);
             stmtUpdStatus.executeUpdate();
             
-            ApplicationMain.closeStatement(stmtUpdStatus);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeStatement(stmtUpdStatus);
+            RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Couldn't update status in Invoice");
@@ -203,14 +263,15 @@ public class ShipmentUI extends javax.swing.JFrame {
         String cancelStatusSQL = "UPDATE Invoices SET invoice_status='Cancelled' WHERE id_order=?";
         
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             PreparedStatement stmtCnclStatus = con.prepareStatement(cancelStatusSQL);
             stmtCnclStatus.setInt(1, orderId);
             stmtCnclStatus.executeUpdate();
 
-            ApplicationMain.closeStatement(stmtCnclStatus);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeStatement(stmtCnclStatus);
+            RentMyStuff.stopConnection(con);
+            ApplicationUI.setOrderLastUpdate(orderId);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Couldn't set 'Cancelled' in the shipmanet_status Invoice");
@@ -248,14 +309,17 @@ public class ShipmentUI extends javax.swing.JFrame {
 
         // 0= "Username", 1= "Order ID", 2= "Start Date", 3= "End Date", 4= "Shipment Status", 5= "Last Update"
         @Override
-        public void setValueAt(Object aValue, int row, int column) {
-
-            if (column == 4) {                                                  // Shipment Status
+        public void setValueAt(Object aValue, int row, int col) {
+            orderIdTemp = shipmentTableModel.getRowCount() - row;
+            System.out.println("Total Rows: " + shipmentTableModel.getColumnCount());
+            System.out.println("orderIdTemp: " + orderIdTemp);
+            if (col == 4) {                                                  // Shipment Status
                 Vector rowData = (Vector) getDataVector().get(row);
                 rowData.set(4, (String) aValue);
-                ApplicationUI.setOrderLastUpdate(row + 1);
-                fireTableCellUpdated(row, column);
-                
+                ApplicationUI.setOrderLastUpdate(orderIdTemp);
+                shipmentTableView();
+                fireTableCellUpdated(row, col);
+                fireTableCellUpdated(row, 5);
 
             }
         }
@@ -269,7 +333,7 @@ public class ShipmentUI extends javax.swing.JFrame {
             if (col == 4) {
                 Object jComboData = tableModel.getValueAt(row, 4);
                 if (jComboData == "Cancelled") {
-                        cancelInvoice(row + 1);
+                        cancelInvoice(orderIdTemp);
                     }
             }
         }
@@ -278,21 +342,21 @@ public class ShipmentUI extends javax.swing.JFrame {
     public static void shipmentTableView() {
         shipmentTableModel.setRowCount(0);
         try {
-            Connection con = ApplicationMain.startConnection();
+            Connection con = RentMyStuff.startConnection();
 
             String selectShipmentsSQL = "SELECT username, id_order, start_rent_date, end_rent_date, shipment_status, Orders.last_update FROM Orders "
                     + "INNER JOIN Customers ON Orders.id_tocustomer = Customers.id_user\n"
                     + "INNER JOIN Users ON Customers.id_user = Users.id_user\n";
             if (!LoginUI.privileges) {
-                selectShipmentsSQL = selectShipmentsSQL + "WHERE Users.id_user=? ORDER BY id_order ASC";
+                selectShipmentsSQL = selectShipmentsSQL + "WHERE Users.id_user=? ORDER BY id_order DESC";
             } else {
-                selectShipmentsSQL += "ORDER BY id_order ASC";
+                selectShipmentsSQL += "ORDER BY id_order DESC";
             }
 
             PreparedStatement stmtShipments = con.prepareStatement(selectShipmentsSQL);
 
             if (!LoginUI.privileges) {
-                stmtShipments.setInt(1, ApplicationMain.customer.getId());
+                stmtShipments.setInt(1, RentMyStuff.customer.getId());
             }
             
             ResultSet rsShipments = stmtShipments.executeQuery();
@@ -317,9 +381,9 @@ public class ShipmentUI extends javax.swing.JFrame {
                 }
 
             }
-            ApplicationMain.closeResultSet(rsShipments);
-            ApplicationMain.closeStatement(stmtShipments);
-            ApplicationMain.stopConnection(con);
+            RentMyStuff.closeResultSet(rsShipments);
+            RentMyStuff.closeStatement(stmtShipments);
+            RentMyStuff.stopConnection(con);
 
         } catch (SQLException ex) {
             System.out.println("Problem in SQL Table Represent");
