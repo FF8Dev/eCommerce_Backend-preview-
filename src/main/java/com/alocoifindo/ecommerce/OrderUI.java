@@ -69,6 +69,7 @@ public class OrderUI extends javax.swing.JFrame {
     static String nif = "X5554778X";
 
     static OrderChecklistTableModel orderTableModel = new OrderChecklistTableModel();
+    static OrderChecklistDisc0TableModel orderDisc0TableModel = new OrderChecklistDisc0TableModel();
     static OrderUI orderUI = new OrderUI();
 
     static Map<Integer, Double> totalPricesMap = new HashMap<Integer, Double>();
@@ -102,6 +103,9 @@ public class OrderUI extends javax.swing.JFrame {
      */
     public OrderUI() {
         initComponents();
+        if (discount0()) {
+            orderTable.setModel(orderDisc0TableModel);
+        }
         setLocationRelativeTo(null);
 
         orderTable.setRowHeight(25);
@@ -113,8 +117,12 @@ public class OrderUI extends javax.swing.JFrame {
         columnModel.getColumn(4).setPreferredWidth(15); // Days
         columnModel.getColumn(5).setPreferredWidth(58); // Discount/Day
         columnModel.getColumn(6).setPreferredWidth(53); // Price on Days
-        columnModel.getColumn(7).setPreferredWidth(33); // Customer Discount
-        columnModel.getColumn(8).setPreferredWidth(50); // Price with Discount
+        if (discount0()) {
+            columnModel.getColumn(7).setPreferredWidth(50); // Price with Discount
+        } else {
+            columnModel.getColumn(7).setPreferredWidth(33); // Customer Discount
+            columnModel.getColumn(8).setPreferredWidth(50); // Price with Discount
+        }
 
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
@@ -126,7 +134,9 @@ public class OrderUI extends javax.swing.JFrame {
         orderTable.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
         orderTable.getColumnModel().getColumn(5).setCellRenderer(centerRenderer);
         orderTable.getColumnModel().getColumn(6).setCellRenderer(centerRenderer);
-        orderTable.getColumnModel().getColumn(7).setCellRenderer(centerRenderer);
+        if (!discount0()) {
+            orderTable.getColumnModel().getColumn(7).setCellRenderer(centerRenderer);
+        }
 
 //        finalPriceField.setText(String.format("%.2f", finalPriceSum));
         // dispose by ESCAPE_KEY
@@ -141,6 +151,14 @@ public class OrderUI extends javax.swing.JFrame {
         });
     }
 
+    private static boolean discount0() {
+        if (RentMyStuff.customer.getDiscount() == 0 && LoginUI.privileges == false) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
     private static class HeaderRenderer implements TableCellRenderer {
 
         DefaultTableCellRenderer renderer;
@@ -339,6 +357,140 @@ public class OrderUI extends javax.swing.JFrame {
         }
     }
 
+    public static class OrderChecklistDisc0TableModel extends DefaultTableModel implements TableModelListener {
+
+        String priceWithSymbol;
+        double pricePerProduct;
+        String discountWithSymbol;
+        int discountPerProduct;
+        double discountComma;
+        boolean listedProduct = false;
+
+        // add tableListener in this & Column Identifiers
+        public OrderChecklistDisc0TableModel() {
+            super(new String[]{"Select", "ID", "Product", "Base Price", "Days", "Discount/Day", "Price on Days", "Final Price"}, 0);
+            addTableModelListener(this);
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            Class clazz = String.class;
+            switch (columnIndex) {
+                case 0:
+                    clazz = Boolean.class;
+                    break;
+                case 4:
+                    clazz = Integer.class;
+                    break;
+            }
+            return clazz;
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            switch (column) {
+                case 0:
+                    return column == 0;
+                default:
+                    return false;
+            }
+        }
+
+        @Override
+        public void setValueAt(Object aValue, int row, int column) {
+
+            if (aValue instanceof Boolean && column == 0) {                     // Select
+                Vector rowData = (Vector) getDataVector().get(row);
+                rowData.set(0, (boolean) aValue);
+                fireTableCellUpdated(row, column);
+                updateFinalPrice();
+                updateTaxes();
+            }
+        }
+
+        // Listener of checkbox // (row, 0) = Select checkmark // (row, 2) = Product // (row, 5) = Price //
+        @Override
+        public void tableChanged(TableModelEvent e) {
+            int row = e.getFirstRow();
+            int col = e.getColumn();
+            TableModel tableModel = (TableModel) e.getSource();
+            if (RentMyStuff.DEBUG) {
+                System.out.println("Order Row changed nº" + row);
+            }
+            if (col >= 0) {
+                // checkmark = boolean data
+                Object datacheck = tableModel.getValueAt(row, 0);;
+
+                // if checkmark true
+                if (datacheck.equals(true)) {
+//                    int daysRow = (Integer) tableModel.getValueAt(row, 4);
+                    int productRow = RentMyStuff.productsInOrder.get(row).getId();
+
+                    // INSERTO into SQL ´order_line´ Temp
+                    try {
+                        Connection con = RentMyStuff.startConnection();
+
+                        PreparedStatement stmtIns = con.prepareStatement("INSERT IGNORE INTO order_line (id_product, id_order) VALUES (?, ?)");
+                        if (RentMyStuff.DEBUG) {
+                            System.out.println("Product ID insert ignore into order_line: " + productRow);
+                        }
+
+                        stmtIns.setInt(1, productRow);
+                        stmtIns.setInt(2, RentMyStuff.order.getId());
+                        stmtIns.executeUpdate();
+
+                        RentMyStuff.closeStatement(stmtIns);
+                        RentMyStuff.stopConnection(con);
+                    } catch (SQLException ex) {
+                        System.out.println("order_line INSERT failed");
+                        ex.printStackTrace();
+                    }
+
+                    if (listedProduct == true) {
+                        totalPricesMap.put(row, finalPricesUncheckMap.get(row));
+                        if (RentMyStuff.DEBUG) {
+                            System.out.println("finalPricesUncheckMap: " + finalPricesUncheckMap.get(row));
+                            System.out.println("Value to put into order_line: " + totalPricesMap.get(row) + " (from row): " + row);
+                        }
+                        updateFinalPrice();
+                        updateTaxes();
+                    }
+
+                    // if checkmark false edit order_line
+                } else if (datacheck.equals(false)) {
+                    int productRow = RentMyStuff.productsInOrder.get(row).getId();
+
+                    // DELETE from SQL ´order_line´ Temp
+                    try {
+                        Connection con = RentMyStuff.startConnection();
+
+                        PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
+                        if (RentMyStuff.DEBUG) {
+                            System.out.println("Product ID deleted from order_line: " + productRow);
+                        }
+
+                        stmtDel.setInt(1, productRow);
+                        stmtDel.executeUpdate();
+
+                        RentMyStuff.closeStatement(stmtDel);
+                        RentMyStuff.stopConnection(con);
+                    } catch (SQLException ex) {
+                        System.out.println("order_line DELETE failed");
+                        ex.printStackTrace();
+                    }
+                    if (RentMyStuff.DEBUG) {
+                        System.out.println("Value to retrieve from order_line: " + totalPricesMap.get(row) + " (from row): " + row);
+                    }
+                    finalPricesUncheckMap.put(row, totalPricesMap.get(row));
+                    totalPricesMap.remove(row);
+                    listedProduct = true;
+                    updateFinalPrice();
+                    updateTaxes();
+                }
+            }
+        }
+    }
+    
     public static void orderTableView() {
         orderTableModel.setRowCount(0);
         RentMyStuff.productsInOrder.clear();
@@ -409,8 +561,14 @@ public class OrderUI extends javax.swing.JFrame {
                 totalPricesMap.put(counter, totalPricePerProduct);
                 counter++;
                 RentMyStuff.productsInOrder.add(new Product(idProduct, idProductNamed, productName, pricePerDay, discountPerDay));
-                Object[] orderRow = {true, idProductNamed, productName, pricePerDayDisplay, totalDays, discountPerDayDisplay, priceBfCDDisplay, discountCustomerDisplay, totalPricePerProductDisplay};
-                orderTableModel.addRow(orderRow);
+                if (discount0()) {
+                    Object[] orderRow = {true, idProductNamed, productName, pricePerDayDisplay, totalDays, discountPerDayDisplay, priceBfCDDisplay, totalPricePerProductDisplay};
+                    orderDisc0TableModel.addRow(orderRow);                      // To show in the table of the program
+                    orderTableModel.addRow(orderRow);                           // To apply in common program functions
+                } else {
+                    Object[] orderRow = {true, idProductNamed, productName, pricePerDayDisplay, totalDays, discountPerDayDisplay, priceBfCDDisplay, discountCustomerDisplay, totalPricePerProductDisplay};
+                    orderTableModel.addRow(orderRow);
+                }
 
             }
             RentMyStuff.closeResultSet(rsProductsOrder);

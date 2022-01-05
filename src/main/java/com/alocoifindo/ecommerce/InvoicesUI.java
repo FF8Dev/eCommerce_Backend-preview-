@@ -57,7 +57,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
     static DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
 
     static int orderIdTemp = 0;
-    
+
     /**
      * Creates new form InvoicesUI
      */
@@ -101,7 +101,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
             }
         });
     }
-    
+
     @Override
     public void windowClosing(WindowEvent e) {
         if (RentMyStuff.DEBUGwin) {
@@ -214,10 +214,10 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("Couldn't update payment_date in Invoice");
         }
     }
-    
+
     static void deletePaymentDate(int orderId) {
         String updateStatusSQL = "UPDATE Invoices SET payment_date=null WHERE id_order=?";
-        
+
         try {
             Connection con = RentMyStuff.startConnection();
 
@@ -232,10 +232,10 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("Couldn't set null in the payment_date Invoice");
         }
     }
-    
+
     static void cancelShipment(int orderId) {
         String cancelStatusSQL = "UPDATE Orders SET shipment_status='Cancelled' WHERE id_order=?";
-        
+
         try {
             Connection con = RentMyStuff.startConnection();
 
@@ -339,7 +339,11 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
                 case 2:
                     return true;
                 case 4:
-                    return true;
+                    if (LoginUI.privileges) {
+                        return true;
+                    } else {
+                        return false;
+                    }
                 default:
                     return false;
             }
@@ -354,7 +358,6 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
                 rowData.set(2, (String) aValue);
                 ApplicationUI.setOrderLastUpdate(orderIdTemp);
                 fireTableCellUpdated(row, column);
-                
 
             } else if (4 == column) {                                           // Payment Date
                 Vector rowData = (Vector) getDataVector().get(row);
@@ -386,7 +389,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
                 } else if (jComboData == "Issued") {
                     tableModel.setValueAt(null, row, 4);
                 }
-            } 
+            }
         }
     }
 
@@ -404,12 +407,12 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
             } else {
                 selectInvoicesSQL += "ORDER BY id_order DESC";
             }
-            
+
             PreparedStatement stmtInvoices = con.prepareStatement(selectInvoicesSQL);
             if (!LoginUI.privileges) {
                 stmtInvoices.setInt(1, RentMyStuff.customer.getId());
             }
-            
+
             ResultSet rsInvoices = stmtInvoices.executeQuery();
 
             while (rsInvoices.next()) {

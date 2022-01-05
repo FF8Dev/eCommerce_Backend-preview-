@@ -21,7 +21,7 @@ import javax.swing.JTextField;
  */
 public class RentMyStuff {
 
-    static boolean DEBUG = true;
+    static boolean DEBUG = false;
     static boolean DEBUGdb = false;
     static boolean DEBUGwin = false;
     static Customer customer = new Customer();
