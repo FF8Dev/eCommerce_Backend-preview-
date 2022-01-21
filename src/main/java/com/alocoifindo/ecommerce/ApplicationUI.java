@@ -122,8 +122,6 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     JButton datePickerButtonEnd;
     ImageIcon calendarIcon = new ImageIcon(getClass().getResource("/calendar-20.png"));
 
-    static String XML_FOLDER;
-
     /**
      * Creates new form ApplicationUI
      */
@@ -216,7 +214,6 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         rentReserved = new HashSet<ReservedProduct>();
 
-//        XML_FOLDER = ApplicationUI.class.getClassLoader().getResource("xml_invoice").getPath();
         readXML();
     }
 
@@ -638,34 +635,48 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     static public List<LocalDate> rangeDates(LocalDate startDate, LocalDate endDate) {
         List<LocalDate> rangeDates = startDate.datesUntil(endDate.plusDays(1)).map(x -> x).collect(Collectors.toList());
         for (LocalDate date : rangeDates) {
-            System.out.println("Working range: " + date);
+            if (RentMyStuff.DEBUGwin) {
+                System.out.println("Working range: " + date);
+            }
         }
         return rangeDates;
     }
 
     static public boolean compareDates(List<LocalDate> orderDates, List<LocalDate> reservedDates) {
         for (LocalDate date : orderDates) {
-            System.out.println("Dates Order: " + date);
+            if (RentMyStuff.DEBUGwin) {
+                System.out.println("Dates Order: " + date);
+            }
             if (reservedDates.contains(date)) {
-                System.out.println("Compare dates: true");
+                if (RentMyStuff.DEBUGwin) {
+                    System.out.println("Compare dates: true");
+                }
                 return true;
             }
         }
-        System.out.println("Compare dates: false");
+        if (RentMyStuff.DEBUGwin) {
+            System.out.println("Compare dates: false");
+        }
         return false;
     }
 
     static boolean checkId(String idCell) {
         for (Iterator<ReservedProduct> i = rentReserved.iterator(); i.hasNext();) {
             ReservedProduct next = i.next();
-            System.out.println("NextProductId: " + next.getProductId());
+            if (RentMyStuff.DEBUGwin) {
+                System.out.println("NextProductId: " + next.getProductId());
+            }
 
             if (next.getProductId().equals(idCell)) {
-                System.out.println("\nEquals cell");
+                if (RentMyStuff.DEBUGwin) {
+                    System.out.println("\nEquals cell");
+                }
                 List<LocalDate> orderDates = rangeDates(RentMyStuff.order.getStartDate(), RentMyStuff.order.getEndDate());
                 List<LocalDate> nextDates = rangeDates(next.getStartDate(), next.getEndDate());
                 for (LocalDate date : orderDates) {
-                    System.out.println("\nOrder Date: " + date);
+                    if (RentMyStuff.DEBUGwin) {
+                        System.out.println("\nOrder Date: " + date);
+                    }
                 }
                 if (compareDates(orderDates, nextDates)) {
                     return true;
@@ -1115,8 +1126,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             File[] directoryListing = dir.listFiles();
             if (directoryListing != null) {
                 for (File child : directoryListing) {
-                    System.out.println("\nFile existing: " + child.getName());
-
+                    if (RentMyStuff.DEBUGwin) {
+                        System.out.println("\nFile existing: " + child.getName());
+                    }
                     DocumentBuilder db = dbf.newDocumentBuilder();
                     Document doc = db.parse(child);
                     doc.getDocumentElement().normalize();
@@ -1131,7 +1143,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                                 Element pElement = (Element) prod;
                                 String prodId = pElement.getElementsByTagName("id").item(0).getTextContent();
                                 reservedProduct.setProductId(prodId);
-                                System.out.println("Product id: " + prodId);
+                                if (RentMyStuff.DEBUGwin) {
+                                    System.out.println("Product id: " + prodId);
+                                }
 
                             }
                             // Here nodeList contains all the nodes with
@@ -1148,10 +1162,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                                     String endDate = dElement.getElementsByTagName("end-rent-day").item(0).getTextContent();
 
                                     reservedProduct.setStartDate(LocalDate.parse(startDate, dateFormat));
-                                    System.out.println("ReservedProduct StartDate: " + reservedProduct.getStartDate());
-
                                     reservedProduct.setEndDate(LocalDate.parse(endDate, dateFormat));
-                                    System.out.println("ReservedProduct EndDate: " + reservedProduct.getEndDate());
+                                    if (RentMyStuff.DEBUGwin) {
+                                        System.out.println("ReservedProduct StartDate: " + reservedProduct.getStartDate());
+                                        System.out.println("ReservedProduct EndDate: " + reservedProduct.getEndDate());
+                                    }
                                 }
                             }
                             rentReserved.add(reservedProduct);

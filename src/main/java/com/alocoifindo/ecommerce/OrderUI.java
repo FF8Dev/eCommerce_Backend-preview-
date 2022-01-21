@@ -103,6 +103,7 @@ public class OrderUI extends javax.swing.JFrame {
 
     static Path rmsFolder;
     static Path xmlFolder;
+    static Path xmlCancelledFolder;
     static Path pdfFolder;
     static String xmlFile;
     final static URL XSLT_URL = OrderUI.class.getClassLoader().getResource("invoice_template.xsl");
@@ -188,6 +189,10 @@ public class OrderUI extends javax.swing.JFrame {
             if (Files.notExists(xmlFolder)) {
                 Files.createDirectory(xmlFolder);
             }
+            xmlCancelledFolder = rmsFolder.resolve("Cancelled_Orders");
+            if (Files.notExists(xmlCancelledFolder)) {
+                Files.createDirectory(xmlCancelledFolder);
+            }
             File dsStoreFile = new File(xmlFolder + "/.DS_Store");
             if (dsStoreFile.exists()) {
                 dsStoreFile.delete();
@@ -197,7 +202,9 @@ public class OrderUI extends javax.swing.JFrame {
             if (Files.notExists(pdfFolder)) {
                 Files.createDirectory(pdfFolder);
             }
-            System.out.println("RentMyStuff Folder: " + rmsFolder);
+            if (RentMyStuff.DEBUG) { 
+                System.out.println("\nRentMyStuff Folder: " + rmsFolder + "\n");
+            }
         }
     }
     

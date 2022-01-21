@@ -12,6 +12,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -250,6 +256,48 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("Couldn't set 'Cancelled' in the shipmanet_status Invoice");
         }
     }
+    
+    static void cancelOrder(int orderId) {       
+        String xmlFile = String.format("%06d", orderId) + ".xml";
+        File xmlManipulSrc = new File(OrderUI.xmlFolder + "/" + xmlFile);
+        File xmlManipulTrg = new File(OrderUI.xmlCancelledFolder + "/" + xmlFile);
+        
+        if (Files.exists(xmlManipulSrc.toPath())) {
+            System.out.println("Source moving: " + xmlManipulSrc.toPath());
+            try {
+                Files.move(xmlManipulSrc.toPath(), xmlManipulTrg.toPath(), REPLACE_EXISTING);
+                System.out.println("Target: " + xmlManipulTrg.toPath() + "\n");
+                System.out.println("Cancelled Order\n");
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+                System.out.println("Cannot move Cancelled XML");
+            }
+            ApplicationUI.rentReserved.clear();
+        } else {
+            System.out.println("File XML not cancelled\n");
+        }
+    }
+    
+    static void readmitOrder(int orderId) {
+        String xmlFile = String.format("%06d", orderId) + ".xml";
+        File xmlManipulSrc = new File(OrderUI.xmlCancelledFolder + "/" + xmlFile);
+        File xmlManipulTrg = new File(OrderUI.xmlFolder + "/" + xmlFile);
+        
+        if (Files.exists(xmlManipulSrc.toPath())) {
+            System.out.println("Moving: " + xmlManipulSrc.toPath());
+            try {
+                Files.move(xmlManipulSrc.toPath(), xmlManipulTrg.toPath(), REPLACE_EXISTING);
+                System.out.println("Target: " + xmlManipulTrg.toPath() + "\n");
+                System.out.println("Readmited Order\n");
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+                System.out.println("Cannot readmit XML");
+            }
+            ApplicationUI.rentReserved.clear();
+        } else {
+            System.out.println("File XML not readmited\n");
+        }
+    }
 
     public class StatusCellRenderer extends DefaultTableCellRenderer {
 
@@ -383,12 +431,17 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
                 Object jComboData = tableModel.getValueAt(row, 2);
                 if (jComboData == "Paid") {
                     tableModel.setValueAt(LocalDate.now().format(dateFormat), row, 4);
+                    readmitOrder(orderIdTemp);
                 } else if (jComboData == "Cancelled") {
                     tableModel.setValueAt(null, row, 4);
                     cancelShipment(orderIdTemp);
+                    cancelOrder(orderIdTemp);
                 } else if (jComboData == "Issued") {
                     tableModel.setValueAt(null, row, 4);
+                    readmitOrder(orderIdTemp);
                 }
+                ApplicationUI.readXML();
+                ApplicationUI.productsTable.repaint();
             }
         }
     }

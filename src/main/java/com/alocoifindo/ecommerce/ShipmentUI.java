@@ -53,12 +53,12 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
     static ShipmentUI shipmentUI = new ShipmentUI();
 
     String[] optionsCombo = {"Waiting", "In Rent", "Ended", "Cancelled"};
-    
+
     static DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
     static DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm:ss").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault());
-    
+
     static int orderIdTemp = 0;
-    
+
     /**
      * Creates new form ShipmentUI
      */
@@ -84,13 +84,13 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
         // Header center render
         JTableHeader header = shipmentTable.getTableHeader();
         header.setDefaultRenderer(new HeaderRenderer(shipmentTable));
-        
+
         // Add ComboBox to table
         if (LoginUI.privileges) {
             shipmentTable.setDefaultRenderer(JComboBox.class, new StatusCellRenderer());
             shipmentTable.setDefaultEditor(JComboBox.class, new StatusComboBoxEditor());
         }
-        
+
         // dispose by ESCAPE_KEY
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getRootPane().getActionMap();
@@ -155,7 +155,7 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("ShipmentUI: windowDeactivated.");
         }
     }
-    
+
     private static class HeaderRenderer implements TableCellRenderer {
 
         DefaultTableCellRenderer renderer;
@@ -175,8 +175,8 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
                     table, value, isSelected, hasFocus, row, col);
         }
     }
-    
-     public class StatusCellRenderer extends DefaultTableCellRenderer {
+
+    public class StatusCellRenderer extends DefaultTableCellRenderer {
 
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
@@ -195,12 +195,12 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
         }
 
     }
-    
+
     /**
      * Custom class for adding elements in the JComboBox.
      */
     public class StatusComboBoxEditor extends AbstractCellEditor implements TableCellEditor, ActionListener {
-        
+
         String status;
         int row;
         // Declare a model that is used for adding the elements to the `Combo box`
@@ -238,30 +238,30 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("Shipment Status Updated");
         }
     }
-    
+
     static void statusUpdate(String status, int orderId) {
         String updateStatusSQL = "UPDATE Orders SET shipment_status=? WHERE id_order=?";
-        
+
         try {
             Connection con = RentMyStuff.startConnection();
-            
+
             PreparedStatement stmtUpdStatus = con.prepareStatement(updateStatusSQL);
             stmtUpdStatus.setString(1, status);
             stmtUpdStatus.setInt(2, orderId);
             stmtUpdStatus.executeUpdate();
-            
+
             RentMyStuff.closeStatement(stmtUpdStatus);
             RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Couldn't update status in Invoice");
         }
-        
+
     }
-    
+
     static void cancelInvoice(int orderId) {
         String cancelStatusSQL = "UPDATE Invoices SET invoice_status='Cancelled' WHERE id_order=?";
-        
+
         try {
             Connection con = RentMyStuff.startConnection();
 
@@ -277,7 +277,15 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("Couldn't set 'Cancelled' in the shipmanet_status Invoice");
         }
     }
-    
+
+//    static void cancelOrder(int orderId) {
+//        String xmlFile = String.format("%06d", orderId) + ".xml";
+//    }
+//
+//    static void readmitOrder(int orderId) {
+//        String xmlFile = String.format("%06d", orderId) + ".xml";
+//    }
+
     public static class ShipmentTableModel extends DefaultTableModel implements TableModelListener {
 
         // add tableListener in this & Column Identifiers
@@ -311,8 +319,9 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
         @Override
         public void setValueAt(Object aValue, int row, int col) {
             orderIdTemp = shipmentTableModel.getRowCount() - row;
-            System.out.println("Total Rows: " + shipmentTableModel.getColumnCount());
-            System.out.println("orderIdTemp: " + orderIdTemp);
+            if (RentMyStuff.DEBUG) {
+                System.out.println("orderIdTemp: " + orderIdTemp);
+            }
             if (col == 4) {                                                  // Shipment Status
                 Vector rowData = (Vector) getDataVector().get(row);
                 rowData.set(4, (String) aValue);
@@ -332,13 +341,24 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
             TableModel tableModel = (TableModel) e.getSource();
             if (col == 4) {
                 Object jComboData = tableModel.getValueAt(row, 4);
-                if (jComboData == "Cancelled") {
-                        cancelInvoice(orderIdTemp);
+                if (jComboData.equals("Cancelled")) {
+                    cancelInvoice(orderIdTemp);
+                    InvoicesUI.cancelOrder(orderIdTemp);
+                    if (RentMyStuff.DEBUG) {
+                        System.out.println("Selection: " + jComboData);
                     }
+                } else {
+                    InvoicesUI.readmitOrder(orderIdTemp);
+                    if (RentMyStuff.DEBUG) {
+                        System.out.println("Selection: " + jComboData);
+                    }
+                }
+                ApplicationUI.readXML();
+                ApplicationUI.productsTable.repaint();
             }
         }
     }
-    
+
     public static void shipmentTableView() {
         shipmentTableModel.setRowCount(0);
         try {
@@ -358,7 +378,7 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
             if (!LoginUI.privileges) {
                 stmtShipments.setInt(1, RentMyStuff.customer.getId());
             }
-            
+
             ResultSet rsShipments = stmtShipments.executeQuery();
 
             while (rsShipments.next()) {
@@ -375,7 +395,7 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
                 // "Username", "Order ID", "Status", "Issue Date", "Payment Date", "Amount"
                 Object[] invoiceRow = {username, String.format("%06d", orderId), startDateFormat, endDateFormat, status, lastUpdateFormat};
                 if (status.equals("Not Finished")) {
-                    
+
                 } else {
                     shipmentTableModel.addRow(invoiceRow);
                 }
@@ -392,7 +412,7 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
 
         shipmentUI.setVisible(true);
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
