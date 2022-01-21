@@ -1,15 +1,10 @@
-/*
- * Copyright Alocoifindo 2021®
- * GitHub with ♥︎ for sharing purposes
- * https://alocosite.w3spaces.com* GNU General Public License v3.0
- */
-package com.alocoifindo.ecommerce;
-
 /**
  * Copyright Alocoifindo 2021®
  * GitHub with ♥︎ for educational purposes
  * https://alocosite.w3spaces.com
  */
+package com.alocoifindo.ecommerce;
+
 public class Product {
     private int id;
     private String idNamed;

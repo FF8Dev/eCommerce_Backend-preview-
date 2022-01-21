@@ -20,6 +20,10 @@
         <telephone>626544440</telephone>
     </invoice-from>
     <order>
+        <dates>
+            <start-rent-day>14-Dec-2021</start-rent-day>
+            <end-rent-day>16-Dec-2021</end-rent-day>
+        </dates>
         <product>
             <id>CM-002-1</id>
             <product-name>Olympus AM-100</product-name>

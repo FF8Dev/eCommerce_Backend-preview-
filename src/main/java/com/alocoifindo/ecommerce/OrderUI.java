@@ -12,8 +12,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.ProviderNotFoundException;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -21,10 +30,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
@@ -89,9 +101,12 @@ public class OrderUI extends javax.swing.JFrame {
 
     static DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
 
+    static Path rmsFolder;
+    static Path xmlFolder;
+    static Path pdfFolder;
     static String xmlFile;
-    static String XML_FOLDER = orderUI.getClass().getClassLoader().getResource("xml_invoice").getPath();
-    static String OUTPUT_FOLDER = orderUI.getClass().getClassLoader().getResource("output").getPath();
+    final static URL XSLT_URL = OrderUI.class.getClassLoader().getResource("invoice_template.xsl");
+    final static String OUTPUT_URL = OrderUI.class.getClassLoader().getResource("output").getPath();
 
 //    static final String XML_DIR = String.class.getResource("/xml_invoice").toString();
 //    static final String OUTPUT_DIR = String.class.getResource("/output").toString();
@@ -156,6 +171,33 @@ public class OrderUI extends javax.swing.JFrame {
             return true;
         } else {
             return false;
+        }
+    }
+
+    public static void createInvoicesFolder() throws IOException {
+        Path homePath = Paths.get(System.getProperty("user.home"));
+
+        if (Files.isDirectory(homePath) && Files.exists(homePath)) {
+            rmsFolder = homePath.resolve("RentMyStuff");
+
+            if (Files.notExists(rmsFolder)) {
+                Files.createDirectory(rmsFolder);
+            }
+            
+            xmlFolder = rmsFolder.resolve("XML");
+            if (Files.notExists(xmlFolder)) {
+                Files.createDirectory(xmlFolder);
+            }
+            File dsStoreFile = new File(xmlFolder + "/.DS_Store");
+            if (dsStoreFile.exists()) {
+                dsStoreFile.delete();
+            }
+            
+            pdfFolder = rmsFolder.resolve("PDF");
+            if (Files.notExists(pdfFolder)) {
+                Files.createDirectory(pdfFolder);
+            }
+            System.out.println("RentMyStuff Folder: " + rmsFolder);
         }
     }
     
@@ -490,7 +532,7 @@ public class OrderUI extends javax.swing.JFrame {
             }
         }
     }
-    
+
     public static void orderTableView() {
         orderTableModel.setRowCount(0);
         RentMyStuff.productsInOrder.clear();
@@ -727,7 +769,7 @@ public class OrderUI extends javax.swing.JFrame {
         }
     }
 
-    public static void createDocXML() throws URISyntaxException {
+    public static void createDocXML() throws URISyntaxException, IOException {
         // XML document build
         xmlFile = String.format("%06d", RentMyStuff.order.getId()) + ".xml";
         try {
@@ -961,7 +1003,7 @@ public class OrderUI extends javax.swing.JFrame {
             Transformer transformer = transformerFactory.newTransformer();
             DOMSource source = new DOMSource(doc);
 
-            StreamResult result = new StreamResult(new File(XML_FOLDER + xmlFile));
+            StreamResult result = new StreamResult(new File(xmlFolder + "/" + xmlFile));
             transformer.transform(source, result);
 
             if (RentMyStuff.DEBUG) {
@@ -976,16 +1018,17 @@ public class OrderUI extends javax.swing.JFrame {
     }
 
     public static void convertToPDF() throws IOException, FOPException, TransformerException, URISyntaxException {
+
         // the XSL FO file
-        File xsltFile = new File(XML_FOLDER + "/invoice_template.xsl");
+        InputStream xsltFile = OrderUI.class.getClassLoader().getResourceAsStream("invoice_template.xsl");
         // the XML file which provides the input
-        StreamSource xmlSource = new StreamSource(new File(XML_FOLDER + xmlFile));
+        StreamSource xmlSource = new StreamSource(new File(xmlFolder + "/" + xmlFile));
         // create an instance of fop factory
         FopFactory fopFactory = FopFactory.newInstance(new File(".").toURI());
         // a user agent is needed for transformation
         FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
         // Setup output
-        OutputStream out = new java.io.FileOutputStream(OUTPUT_FOLDER + "/invoice_" + String.format("%06d", RentMyStuff.order.getId()) + ".pdf");
+        OutputStream out = new java.io.FileOutputStream(pdfFolder + "/invoice_" + String.format("%06d", RentMyStuff.order.getId()) + ".pdf");
 
         try {
             // Construct fop with desired output format
@@ -1003,15 +1046,17 @@ public class OrderUI extends javax.swing.JFrame {
             // That's where the XML is first transformed to XSL-FO and then
             // PDF is created
             transformer.transform(xmlSource, res);
+
         } finally {
             out.close();
         }
-    }
 
+    }
     //Cross platform solution to view a PDF file
-    public void pdfViewer() {
+
+    public void pdfViewer() throws URISyntaxException, IOException {
         try {
-            File pdfFile = new File(OUTPUT_FOLDER + "/invoice_" + String.format("%06d", RentMyStuff.order.getId()) + ".pdf");
+            File pdfFile = new File(pdfFolder + "/invoice_" + String.format("%06d", RentMyStuff.order.getId()) + ".pdf");
             if (pdfFile.exists()) {
 
                 if (Desktop.isDesktopSupported()) {
@@ -1217,7 +1262,7 @@ public class OrderUI extends javax.swing.JFrame {
 
     private void invoiceButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_invoiceButtonActionPerformed
         if (RentMyStuff.DEBUG) {
-            System.out.println("Prepared XML Folder: " + XML_FOLDER);
+            System.out.println("XML Folder: " + xmlFolder.toString());
         }
         // Checker of completed profile to create invoice.
         data_remain = userDataCheck();
@@ -1229,6 +1274,8 @@ public class OrderUI extends javax.swing.JFrame {
                     createDocXML();
                 } catch (URISyntaxException ex) {
                     ex.printStackTrace();
+                } catch (IOException ioe) {
+                    ioe.printStackTrace();
                 }
                 try {
                     convertToPDF();
@@ -1249,6 +1296,12 @@ public class OrderUI extends javax.swing.JFrame {
                 sameOrder = true;
                 ApplicationUI.setOrderId();
                 ApplicationUI.updateOrderLine();
+                ApplicationUI.readXML();
+                ApplicationUI.listModel.clear();
+                for (int row = 0; row < ApplicationUI.productsTable.getRowCount(); row++) {
+                    ApplicationUI.productsTableModel.setValueAt(false, row, 0);
+                }
+                ApplicationUI.productsTable.repaint();
             }
         } else {
             int n = JOptionPane.showConfirmDialog(orderUI, "User data needed for invoice, would you like to update?", "Complete profile for Invoice", JOptionPane.YES_NO_OPTION);

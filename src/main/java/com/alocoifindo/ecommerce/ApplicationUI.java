@@ -10,37 +10,73 @@ import com.github.lgooddatepicker.components.DatePickerSettings;
 import com.github.lgooddatepicker.optionalusertools.DateChangeListener;
 import com.github.lgooddatepicker.optionalusertools.DateVetoPolicy;
 import com.github.lgooddatepicker.zinternaltools.DateChangeEvent;
+import java.awt.Component;
+import java.awt.ComponentOrientation;
+import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.EventObject;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
+import javax.swing.AbstractCellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.event.CellEditorListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -59,11 +95,19 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     static Map<Integer, Integer> discountPerDayMap = new HashMap<Integer, Integer>();
     static Map<Integer, Boolean> selectedProduct = new HashMap<Integer, Boolean>();
 
+    static HashSet<ReservedProduct> rentReserved;
+    static Map<Integer, ReservedProduct> rentOrder = new HashMap<Integer, ReservedProduct>();
+
     static DefaultComboBoxModel customersComboBoxModel = new DefaultComboBoxModel();
     static customerListener comboListener = new customerListener();
     static ProductsChecklistTableModel productsTableModel = new ProductsChecklistTableModel();
+    static GrayableCellRenderer grayableRenderer = new GrayableCellRenderer();
+    static GrayableCheckboxCellRenderer grayableCheckboxRenderer = new GrayableCheckboxCellRenderer();
+//    GrayableImageIconCellRenderer grayableImageIconRenderer = new GrayableImageIconCellRenderer();
     static DefaultListModel listModel = new DefaultListModel();
+
     SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, 0, 90, 1);
+
     static ApplicationUI appUI = new ApplicationUI();
 
     static DatePickerSettings dateSettingsStart;
@@ -71,13 +115,15 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
     static DatePicker datePickerStart;
     static DatePicker datePickerEnd;
-    
+
     DateListenerStart dateListenerStart = new DateListenerStart();
     DateListenerEnd dateListenerEnd = new DateListenerEnd();
     JButton datePickerButtonStart;
     JButton datePickerButtonEnd;
     ImageIcon calendarIcon = new ImageIcon(getClass().getResource("/calendar-20.png"));
-    
+
+    static String XML_FOLDER;
+
     /**
      * Creates new form ApplicationUI
      */
@@ -92,7 +138,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             jSeparator1.setVisible(false);
             productAddButton.setVisible(false);
         }
-        
+
         int customerId = RentMyStuff.customer.getId();
         if (RentMyStuff.DEBUG) {
             System.out.println("!!!: " + customerId);
@@ -123,6 +169,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         productsTableView();
         setCustomerDataUI();
+        productsTable.setDefaultRenderer(String.class, grayableRenderer);
+        productsTable.setDefaultRenderer(Boolean.class, grayableCheckboxRenderer);    // desplace JCheckBox when clicked
+//        productsTable.setDefaultRenderer(JCheckBox.class, grayableCheckboxRenderer);  // doesn't accept paitings
+//        productsTable.setDefaultEditor(Boolean.class, new GrayableCellEditor());
+//        productsTable.setDefaultRenderer(ImageIcon.class, grayableImageIconRenderer);
 
         daysSpinner.setVisible(false);
 //        daysSpinner.addChangeListener(new daysListener());
@@ -132,7 +183,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         datePickerStart = new DatePicker(dateSettingsStart);
         datePickerEnd = new DatePicker(dateSettingsEnd);
-        
+
         dateSettingsStart.setFormatForDatesCommonEra("d MMM yyyy");
         dateSettingsStart.setFormatForDatesBeforeCommonEra("d MMM uuuu");
         dateSettingsEnd.setFormatForDatesCommonEra("d MMM yyyy");
@@ -142,26 +193,31 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 //        dateSettingsStart.setGapBeforeButtonPixels(0);
         DateVetoPolicy vetoPolicyStart = new DateVetoPolicyStart();
         DateVetoPolicy vetoPolicyEnd = new DateVetoPolicyEnd();
-        
+
         dateSettingsStart.setVetoPolicy(vetoPolicyStart);
         dateSettingsEnd.setVetoPolicy(vetoPolicyEnd);
-        
+
         datePickerStart.setDateToToday();
         datePickerEnd.setDateToToday();
 
         datePickerButtonStart = datePickerStart.getComponentToggleCalendarButton();
         datePickerButtonEnd = datePickerEnd.getComponentToggleCalendarButton();
-        
+
         datePickerButtonStart.setText("");
         datePickerButtonStart.setIcon(calendarIcon);
         datePickerButtonEnd.setText("");
         datePickerButtonEnd.setIcon(calendarIcon);
-        
+
         datePanel.add(datePickerStart);
         datePanel.add(datePickerEnd);
-        
+
         datePickerStart.addDateChangeListener(dateListenerStart);
         datePickerEnd.addDateChangeListener(dateListenerEnd);
+
+        rentReserved = new HashSet<ReservedProduct>();
+
+//        XML_FOLDER = ApplicationUI.class.getClassLoader().getResource("xml_invoice").getPath();
+        readXML();
     }
 
     @Override
@@ -250,11 +306,11 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     public static void setOrderLastUpdate(int idOrder) {
         try {
             Connection con = RentMyStuff.startConnection();
-            
+
             PreparedStatement stmtUpdOrd = con.prepareStatement("UPDATE Orders SET last_update=NOW() WHERE id_order=?");
             stmtUpdOrd.setInt(1, idOrder);
             stmtUpdOrd.executeUpdate();
-            
+
             RentMyStuff.closeStatement(stmtUpdOrd);
             RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
@@ -262,7 +318,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             System.out.println("Couldn't update NOW() in last_update Order");
         }
     }
-    
+
     public static void setOrderId() {
         try {
             Connection con = RentMyStuff.startConnection();
@@ -348,7 +404,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             for (Customer customer : customers) {
                 customersComboBoxModel.addElement(customer.getUsername());
             }
-            
+
             RentMyStuff.closeResultSet(rsCustomers);
             RentMyStuff.closeStatement(stmtCustomers);
             RentMyStuff.stopConnection(con);
@@ -431,12 +487,12 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                         // check 5 corresponds with priceWDiscountSymbol or 6 --> after add idProductNamed
                         productsTableModel.setValueAt(priceWDiscountSymbol, i, 6);
                     }
-                    
+
                     RentMyStuff.closeResultSet(rsCustSelected);
                     RentMyStuff.closeStatement(stmtUpdOrd);
                     RentMyStuff.closeStatement(stmtDiscounts);
                     RentMyStuff.stopConnection(con);
-                    
+
                 } catch (SQLException ex) {
                     System.out.println("Error while setting Discount percentage OR Update id_toCustomer");
                     ex.printStackTrace();
@@ -471,7 +527,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             return true;
         }
     }
-    
+
     private static class DateVetoPolicyEnd implements DateVetoPolicy {
 
         LocalDate today = LocalDate.now();
@@ -501,31 +557,31 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             LocalDate newDate = dce.getNewDate();
             RentMyStuff.order.setStartDate(newDate);
             int adjustedDays = (Math.abs(RentMyStuff.order.getEndDate().compareTo(newDate))) + 1;
-            
-            
+
             if (RentMyStuff.order.getEndDate().compareTo(newDate) == 0) {
                 daysField.setText("1");
             } else if (RentMyStuff.order.getEndDate().compareTo(newDate) <= 0) {
                 daysField.setText("0");
                 adjustedDays = 0;
-                
+
             } else {
                 daysField.setText(String.valueOf(adjustedDays));
             }
             RentMyStuff.totalDays = adjustedDays;
             updateTotalPrice(adjustedDays);
-            
+            productsTable.repaint();
+
             Connection con;
             try {
                 con = RentMyStuff.startConnection();
                 String updateDateStartSQL = "UPDATE Orders SET start_rent_date=?, total_days=? WHERE id_order=?";
-                
+
                 PreparedStatement stmtDateStart = con.prepareStatement(updateDateStartSQL);
                 stmtDateStart.setDate(1, Date.valueOf(dce.getNewDate()));
                 stmtDateStart.setInt(2, adjustedDays);
                 stmtDateStart.setInt(3, RentMyStuff.order.getId());
                 stmtDateStart.executeUpdate();
-                
+
                 RentMyStuff.closeStatement(stmtDateStart);
                 RentMyStuff.stopConnection(con);
             } catch (SQLException e) {
@@ -536,7 +592,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         }
 
     }
-    
+
     public static class DateListenerEnd implements DateChangeListener {
 
         @Override
@@ -544,8 +600,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             LocalDate newDate = dce.getNewDate();
             RentMyStuff.order.setEndDate(newDate);
             int adjustedDays = (Math.abs(RentMyStuff.order.getStartDate().compareTo(newDate)) + 1);
-            
-            
+
             if (Math.abs(RentMyStuff.order.getStartDate().compareTo(newDate)) == 0) {
                 daysField.setText("1");
             } else if (Math.abs(RentMyStuff.order.getStartDate().compareTo(newDate)) <= 0) {
@@ -556,18 +611,19 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             }
             RentMyStuff.totalDays = adjustedDays;
             updateTotalPrice(adjustedDays);
-            
+            productsTable.repaint();
+
             Connection con;
             try {
                 con = RentMyStuff.startConnection();
                 String updateDateEndSQL = "UPDATE Orders SET end_rent_date=?, total_days=? WHERE id_order=?";
-                
+
                 PreparedStatement stmtDateEnd = con.prepareStatement(updateDateEndSQL);
                 stmtDateEnd.setDate(1, Date.valueOf(dce.getNewDate()));
                 stmtDateEnd.setInt(2, adjustedDays);
                 stmtDateEnd.setInt(3, RentMyStuff.order.getId());
                 stmtDateEnd.executeUpdate();
-                
+
                 RentMyStuff.closeStatement(stmtDateEnd);
                 RentMyStuff.stopConnection(con);
             } catch (SQLException e) {
@@ -576,9 +632,186 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             }
             setOrderLastUpdate(RentMyStuff.order.getId());
         }
-        
+
     }
 
+    static public List<LocalDate> rangeDates(LocalDate startDate, LocalDate endDate) {
+        List<LocalDate> rangeDates = startDate.datesUntil(endDate.plusDays(1)).map(x -> x).collect(Collectors.toList());
+        for (LocalDate date : rangeDates) {
+            System.out.println("Working range: " + date);
+        }
+        return rangeDates;
+    }
+
+    static public boolean compareDates(List<LocalDate> orderDates, List<LocalDate> reservedDates) {
+        for (LocalDate date : orderDates) {
+            System.out.println("Dates Order: " + date);
+            if (reservedDates.contains(date)) {
+                System.out.println("Compare dates: true");
+                return true;
+            }
+        }
+        System.out.println("Compare dates: false");
+        return false;
+    }
+
+    static boolean checkId(String idCell) {
+        for (Iterator<ReservedProduct> i = rentReserved.iterator(); i.hasNext();) {
+            ReservedProduct next = i.next();
+            System.out.println("NextProductId: " + next.getProductId());
+
+            if (next.getProductId().equals(idCell)) {
+                System.out.println("\nEquals cell");
+                List<LocalDate> orderDates = rangeDates(RentMyStuff.order.getStartDate(), RentMyStuff.order.getEndDate());
+                List<LocalDate> nextDates = rangeDates(next.getStartDate(), next.getEndDate());
+                for (LocalDate date : orderDates) {
+                    System.out.println("\nOrder Date: " + date);
+                }
+                if (compareDates(orderDates, nextDates)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+//    public class GrayableImageIconCellRenderer extends ImageIcon implements  TableCellRenderer {
+//        boolean isEditable(int row) {
+//            String prodIdCell = String.valueOf(productsTable.getValueAt(row, 1));
+//            
+//            if (checkId(prodIdCell)) {
+//                return false;
+//            } else {
+//                return true;
+//            }
+//        }
+//        
+//        @Override
+//        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+//            boolean editable = isEditable(row);
+//            
+//            if (!editable) {
+//                setBackground(editable ? UIManager.getColor("Table.background") : UIManager.getColor("Label.disabledShadow"));
+//            } else {
+//                setBackground(isSelected ? UIManager.getColor("Table.selectionBackground") : UIManager.getColor("Table.background"));
+//            }
+//            
+//            return this;
+//        }
+//    }
+//    
+    public static class GrayableCellRenderer extends JTextField implements TableCellRenderer {
+
+        boolean isGray(int row) {
+            String prodIdCell = String.valueOf(productsTable.getValueAt(row, 1));
+            
+            if (checkId(prodIdCell)) {
+                setEnabled(false);
+                return false;
+            } else {
+                setEnabled(true);
+                return true;
+            }
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            boolean editable = isGray(row);
+            if (!editable) {
+                setBackground(editable ? UIManager.getColor("Table.background") : UIManager.getColor("controlShadow"));
+            } else {
+                setBackground(isSelected ? UIManager.getColor("Table.selectionBackground") : UIManager.getColor("Table.background"));
+            }
+            setText(String.valueOf(value));
+            setFont(new Font("Sans_Serif", Font.PLAIN, 12));
+            setBorder(null);
+
+//            setSelected((Boolean) value);
+//            if (isSelected) {
+//                // TODO: cell (and perhaps other cells) are selected, need to highlight it
+//            }
+            return this;
+        }
+    }
+
+    public static class GrayableCheckboxCellRenderer extends JCheckBox implements TableCellRenderer {
+        
+        boolean select = false;
+
+        boolean isGray(int row) {
+            String prodIdCell = String.valueOf(productsTable.getValueAt(row, 1));
+            
+            if (checkId(prodIdCell)) {
+//            setEnabled(false);
+                return false;
+            } else {
+//            setEnabled(true);
+                return true;
+            }
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            setHorizontalAlignment(SwingConstants.CENTER);
+            boolean editable = isGray(row);
+                if (value != null && value.equals(true)) {
+                    select = true;
+                    setSelected(true);
+                } else {
+                    select = false;
+                    setSelected(false);
+                }
+                if (!editable) {
+                    setBackground(editable ? UIManager.getColor("Table.background") : UIManager.getColor("controlShadow"));
+                    setEnabled(false);
+                } else {
+                    setBackground(isSelected ? UIManager.getColor("Table.selectionBackground") : UIManager.getColor("Table.background"));
+                    setEnabled(true);
+                }
+
+                return this;
+        }
+    }
+
+//    private class GrayableCellEditor extends AbstractCellEditor implements TableCellEditor, ItemListener {
+//
+//        boolean isGray(int row) {
+//            String prodIdCell = String.valueOf(productsTable.getValueAt(row, 1));
+//            if (checkId(prodIdCell)) {
+////            setEnabled(false);
+//                return false;
+//            } else {
+////            setEnabled(true);
+//                return true;
+//            }
+//        }
+//        
+//        public GrayableCellEditor() {
+//            grayableCheckboxRenderer.addItemListener(this);
+//        }
+//
+//        @Override
+//        public Object getCellEditorValue() {
+//            return grayableCheckboxRenderer.isSelected();
+//        }
+//
+//        @Override
+//        public Component getTableCellEditorComponent(JTable jtable, Object value, boolean isSelected, int row, int col) {
+//            boolean editable = isGray(row);
+//            if (!editable) {
+//                setEnabled(false);
+//            } else {
+//                setEnabled(true);
+//            }
+//            return grayableCheckboxRenderer;
+//        }
+//
+//        @Override
+//        public void itemStateChanged(ItemEvent e) {
+//            this.fireEditingStopped();
+//        }
+//
+//    }
     // Checklist Table
     public static class ProductsChecklistTableModel extends DefaultTableModel implements TableModelListener {
 
@@ -612,9 +845,20 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             return clazz;
         }
 
+        boolean isGray(int row) {
+            String prodIdCell = String.valueOf(productsTable.getValueAt(row, 1));
+            
+            if (checkId(prodIdCell)) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+        
         @Override
         public boolean isCellEditable(int row, int column) {
-            return column == 0;
+            
+            return column == 0 && isGray(row);
         }
 
         @Override
@@ -693,6 +937,8 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                         System.out.println("setValueAt Row: " + row);
                     }
                     selectedProduct.put(row, true);
+                    ReservedProduct addProduct = new ReservedProduct(RentMyStuff.products.get(row).getIdNamed(), RentMyStuff.order.getStartDate(), RentMyStuff.order.getEndDate());
+                    rentOrder.put(row, addProduct);
                     updateTotalPrice(RentMyStuff.totalDays);
 
                     // activate remove item values
@@ -720,12 +966,14 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                             Connection con = RentMyStuff.startConnection();
 
                             PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
-                            System.out.println("Product ID deleted from order_line: " + RentMyStuff.products.get(row).getId());
+                            if (RentMyStuff.DEBUG) {
+                                System.out.println("Product ID deleted from order_line: " + RentMyStuff.products.get(row).getId());
+                            }
                             stmtDel.setInt(1, RentMyStuff.products.get(row).getId());
                             stmtDel.executeUpdate();
 
                             updateTotalPrice(RentMyStuff.totalDays);
-                            
+
                             RentMyStuff.closeStatement(stmtDel);
                             RentMyStuff.stopConnection(con);
                         } catch (SQLException ex) {
@@ -735,7 +983,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
                         // Final Price set
                         selectedProduct.put(row, false);
+                        rentOrder.remove(row);
                         updateTotalPrice(RentMyStuff.totalDays);
+
                     }
                 }
             }
@@ -854,18 +1104,90 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 //            updateTotalPrice(RentMyStuff.totalDays);
 //        }
 //    }
+    public static void readXML() {
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+
+        try {
+            OrderUI.createInvoicesFolder();
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+
+            File dir = new File(OrderUI.xmlFolder.toUri());
+            File[] directoryListing = dir.listFiles();
+            if (directoryListing != null) {
+                for (File child : directoryListing) {
+                    System.out.println("\nFile existing: " + child.getName());
+
+                    DocumentBuilder db = dbf.newDocumentBuilder();
+                    Document doc = db.parse(child);
+                    doc.getDocumentElement().normalize();
+
+                    if (doc.getDocumentElement().getNodeName().equals("invoice")) {
+
+                        NodeList nodeListId = doc.getElementsByTagName("product");
+                        for (int i = 0; i < nodeListId.getLength(); ++i) {
+                            Node prod = nodeListId.item(i);
+                            ReservedProduct reservedProduct = new ReservedProduct();
+                            if (prod.getNodeType() == Node.ELEMENT_NODE) {
+                                Element pElement = (Element) prod;
+                                String prodId = pElement.getElementsByTagName("id").item(0).getTextContent();
+                                reservedProduct.setProductId(prodId);
+                                System.out.println("Product id: " + prodId);
+
+                            }
+                            // Here nodeList contains all the nodes with
+                            // name dates.
+                            NodeList nodeListDates = doc.getElementsByTagName("dates");
+
+                            // Iterate through all the nodes in NodeList
+                            // using for loop.
+                            for (int it = 0; it < nodeListDates.getLength(); ++it) {
+                                Node date = nodeListDates.item(it);
+                                if (date.getNodeType() == Node.ELEMENT_NODE) {
+                                    Element dElement = (Element) date;
+                                    String startDate = dElement.getElementsByTagName("start-rent-day").item(0).getTextContent();
+                                    String endDate = dElement.getElementsByTagName("end-rent-day").item(0).getTextContent();
+
+                                    reservedProduct.setStartDate(LocalDate.parse(startDate, dateFormat));
+                                    System.out.println("ReservedProduct StartDate: " + reservedProduct.getStartDate());
+
+                                    reservedProduct.setEndDate(LocalDate.parse(endDate, dateFormat));
+                                    System.out.println("ReservedProduct EndDate: " + reservedProduct.getEndDate());
+                                }
+                            }
+                            rentReserved.add(reservedProduct);
+                        }
+
+                    }
+                }
+            } else {
+                // Handle the case where dir is not really a directory.
+                // Checking dir.isDirectory() above would not be sufficient
+                // to avoid race conditions with another process that deletes
+                // directories.
+            }
+        } catch (ParserConfigurationException pce) {
+            pce.printStackTrace();
+            System.out.println("Couldn't create DocumentBuilder");
+        } catch (SAXException saxe) {
+            saxe.printStackTrace();
+            System.out.println("Document SAX Exception");
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            System.out.println("Couln't read document");
+        }
+    }
 
     public static void updateOrderLine() {
-        String updateOrderLineSQL = "INSERT INTO order_line(id_product, id_order) VALUES (?, ?)"; 
+        String updateOrderLineSQL = "INSERT INTO order_line(id_product, id_order) VALUES (?, ?)";
         try {
             Connection con = RentMyStuff.startConnection();
             for (int i = 0; i < productsTableModel.getRowCount(); i++) {
                 if (selectedProduct.get(i) != null && selectedProduct.get(i) != false) {
                     PreparedStatement stmtUpdateOrderLine = con.prepareStatement(updateOrderLineSQL);
-                    stmtUpdateOrderLine.setInt(1, i+1);
+                    stmtUpdateOrderLine.setInt(1, i + 1);
                     stmtUpdateOrderLine.setInt(2, RentMyStuff.order.getId());
                     stmtUpdateOrderLine.executeUpdate();
-                
+
                     RentMyStuff.closeStatement(stmtUpdateOrderLine);
                 }
             }
@@ -875,7 +1197,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             System.out.println("Couldn't update order_line New Products");
         }
     }
-    
+
     private static void updateTotalPrice(int days) {
         double finalPriceSum = 0.0;
         for (int i = 0; i < productsTableModel.getRowCount(); i++) {
@@ -903,7 +1225,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             stmtAmnt.setDouble(1, Double.parseDouble(finalPriceSumFormat));
             stmtAmnt.setInt(2, idOrder);
             stmtAmnt.executeUpdate();
-            
+
             RentMyStuff.closeStatement(stmtAmnt);
             RentMyStuff.stopConnection(con);
         } catch (SQLException e) {
@@ -1000,7 +1322,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         daysSpinner.setValue(1);
 
         customerLabel.setFont(new java.awt.Font("Birthstone Bounce", 0, 26)); // NOI18N
-        customerLabel.setText(RentMyStuff.customer.getUsername() + "    ");
+        customerLabel.setText(com.alocoifindo.ecommerce.RentMyStuff.customer.getUsername() + "    ");
 
         datePanel.setMaximumSize(new java.awt.Dimension(277, 94));
         datePanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
