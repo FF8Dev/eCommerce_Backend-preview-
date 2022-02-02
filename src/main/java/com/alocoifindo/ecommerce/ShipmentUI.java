@@ -20,6 +20,8 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
 import javax.swing.AbstractAction;
@@ -52,7 +54,7 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
     static ShipmentTableModel shipmentTableModel = new ShipmentTableModel();
     static ShipmentUI shipmentUI = new ShipmentUI();
 
-    String[] optionsCombo = {"Waiting", "In Rent", "Ended", "Cancelled"};
+    List<String> optionsCombo = new ArrayList<>();
 
     static DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
     static DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm:ss").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault());
@@ -66,6 +68,16 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
         initComponents();
         setLocationRelativeTo(null);
         addWindowListener(this);
+
+        if (LoginUI.privileges) {
+            optionsCombo.add("Waiting");
+            optionsCombo.add("In Rent");
+            optionsCombo.add("Ended");
+            optionsCombo.add("Cancelled");
+        } else {
+            optionsCombo.add("Waiting");
+            optionsCombo.add("Cancelled");
+        }
 
         shipmentTable.setRowHeight(25);
         TableColumnModel columnModel = shipmentTable.getColumnModel();
@@ -86,10 +98,8 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
         header.setDefaultRenderer(new HeaderRenderer(shipmentTable));
 
         // Add ComboBox to table
-        if (LoginUI.privileges) {
-            shipmentTable.setDefaultRenderer(JComboBox.class, new StatusCellRenderer());
-            shipmentTable.setDefaultEditor(JComboBox.class, new StatusComboBoxEditor());
-        }
+        shipmentTable.setDefaultRenderer(JComboBox.class, new StatusCellRenderer());
+        shipmentTable.setDefaultEditor(JComboBox.class, new StatusComboBoxEditor());
 
         // dispose by ESCAPE_KEY
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -217,7 +227,7 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
                 this.row = orderIdTemp;
             }
 
-            JComboBox statusComboBox = new JComboBox(optionsCombo);
+            JComboBox statusComboBox = new JComboBox(optionsCombo.toArray());
 
             statusComboBox.setSelectedItem(status);
             statusComboBox.addActionListener(this);
@@ -285,7 +295,6 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
 //    static void readmitOrder(int orderId) {
 //        String xmlFile = String.format("%06d", orderId) + ".xml";
 //    }
-
     public static class ShipmentTableModel extends DefaultTableModel implements TableModelListener {
 
         // add tableListener in this & Column Identifiers
@@ -344,14 +353,11 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
                 if (jComboData.equals("Cancelled")) {
                     cancelInvoice(orderIdTemp);
                     InvoicesUI.cancelOrder(orderIdTemp);
-                    if (RentMyStuff.DEBUG) {
-                        System.out.println("Selection: " + jComboData);
-                    }
                 } else {
                     InvoicesUI.readmitOrder(orderIdTemp);
-                    if (RentMyStuff.DEBUG) {
-                        System.out.println("Selection: " + jComboData);
-                    }
+                }
+                if (RentMyStuff.DEBUG) {
+                    System.out.println("Selection: " + jComboData);
                 }
                 ApplicationUI.readXML();
                 ApplicationUI.productsTable.repaint();

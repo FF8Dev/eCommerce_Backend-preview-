@@ -153,7 +153,7 @@ public class OrderUI extends javax.swing.JFrame {
         if (!discount0()) {
             orderTable.getColumnModel().getColumn(7).setCellRenderer(centerRenderer);
         }
-
+        
 //        finalPriceField.setText(String.format("%.2f", finalPriceSum));
         // dispose by ESCAPE_KEY
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -201,9 +201,6 @@ public class OrderUI extends javax.swing.JFrame {
             pdfFolder = rmsFolder.resolve("PDF");
             if (Files.notExists(pdfFolder)) {
                 Files.createDirectory(pdfFolder);
-            }
-            if (RentMyStuff.DEBUG) { 
-                System.out.println("\nRentMyStuff Folder: " + rmsFolder + "\n");
             }
         }
     }
@@ -1305,6 +1302,7 @@ public class OrderUI extends javax.swing.JFrame {
                 ApplicationUI.updateOrderLine();
                 ApplicationUI.readXML();
                 ApplicationUI.listModel.clear();
+                OrderUI.orderTableModel.setRowCount(0);
                 for (int row = 0; row < ApplicationUI.productsTable.getRowCount(); row++) {
                     ApplicationUI.productsTableModel.setValueAt(false, row, 0);
                 }

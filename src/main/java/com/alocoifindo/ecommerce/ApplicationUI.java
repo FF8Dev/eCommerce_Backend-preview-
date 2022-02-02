@@ -139,7 +139,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         int customerId = RentMyStuff.customer.getId();
         if (RentMyStuff.DEBUG) {
-            System.out.println("!!!: " + customerId);
+            System.out.println("Customer ID: " + customerId);
         }
         RentMyStuff.order.setCreationDate(LocalDate.now());
         RentMyStuff.order.setStartDate(LocalDate.now());
@@ -215,6 +215,9 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         rentReserved = new HashSet<ReservedProduct>();
 
         readXML();
+        if (RentMyStuff.DEBUG) {
+            System.out.println("\nRentMyStuff Folder: " + OrderUI.rmsFolder + "\n");
+        }
     }
 
     @Override
@@ -298,6 +301,24 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         if (RentMyStuff.DEBUGwin) {
             System.out.println("ApplicationUI: windowDeactivated.");
         }
+    }
+
+    public static void setDiscountInTable() {
+        //update product prices on table by customer
+        for (int i = 0; i < productsTable.getRowCount(); i++) {
+            double pricePerProduct = pricePerDayMap.get(i);
+            double priceWDiscount = pricePerProduct * ((100.0 - RentMyStuff.customer.getDiscount()) / 100);
+
+            String priceWDiscountSymbol = (String.format("%.2f", priceWDiscount)) + " €";
+            if (RentMyStuff.DEBUG) {
+                System.out.println("PriceWDiscountSymbol(" + i + "): " + priceWDiscountSymbol);
+            }
+            // to not update order_line if discountSQL modified
+            updatedDiscount = true;
+            // check 5 corresponds with priceWDiscountSymbol or 6 --> after add idProductNamed
+            productsTableModel.setValueAt(priceWDiscountSymbol, i, 6);
+        }
+        productsTable.repaint();
     }
 
     public static void setOrderLastUpdate(int idOrder) {
@@ -471,19 +492,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     discountField.setText(String.valueOf(RentMyStuff.customer.getDiscount()));
 
                     //update product prices on table by customer
-                    for (int i = 0; i < productsTable.getRowCount(); i++) {
-                        double pricePerProduct = pricePerDayMap.get(i);
-                        double priceWDiscount = pricePerProduct * ((100.0 - RentMyStuff.customer.getDiscount()) / 100);
-
-                        String priceWDiscountSymbol = (String.format("%.2f", priceWDiscount)) + " €";
-                        if (RentMyStuff.DEBUG) {
-                            System.out.println("PriceWDiscountSymbol(" + i + "): " + priceWDiscountSymbol);
-                        }
-                        // to not update order_line if discountSQL modified
-                        updatedDiscount = true;
-                        // check 5 corresponds with priceWDiscountSymbol or 6 --> after add idProductNamed
-                        productsTableModel.setValueAt(priceWDiscountSymbol, i, 6);
-                    }
+                    setDiscountInTable();
 
                     RentMyStuff.closeResultSet(rsCustSelected);
                     RentMyStuff.closeStatement(stmtUpdOrd);
@@ -715,7 +724,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         boolean isGray(int row) {
             String prodIdCell = String.valueOf(productsTable.getValueAt(row, 1));
-            
+
             if (checkId(prodIdCell)) {
                 setEnabled(false);
                 return false;
@@ -746,12 +755,12 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     }
 
     public static class GrayableCheckboxCellRenderer extends JCheckBox implements TableCellRenderer {
-        
+
         boolean select = false;
 
         boolean isGray(int row) {
             String prodIdCell = String.valueOf(productsTable.getValueAt(row, 1));
-            
+
             if (checkId(prodIdCell)) {
 //            setEnabled(false);
                 return false;
@@ -765,22 +774,22 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
             setHorizontalAlignment(SwingConstants.CENTER);
             boolean editable = isGray(row);
-                if (value != null && value.equals(true)) {
-                    select = true;
-                    setSelected(true);
-                } else {
-                    select = false;
-                    setSelected(false);
-                }
-                if (!editable) {
-                    setBackground(editable ? UIManager.getColor("Table.background") : UIManager.getColor("controlShadow"));
-                    setEnabled(false);
-                } else {
-                    setBackground(isSelected ? UIManager.getColor("Table.selectionBackground") : UIManager.getColor("Table.background"));
-                    setEnabled(true);
-                }
+            if (value != null && value.equals(true)) {
+                select = true;
+                setSelected(true);
+            } else {
+                select = false;
+                setSelected(false);
+            }
+            if (!editable) {
+                setBackground(editable ? UIManager.getColor("Table.background") : UIManager.getColor("controlShadow"));
+                setEnabled(false);
+            } else {
+                setBackground(isSelected ? UIManager.getColor("Table.selectionBackground") : UIManager.getColor("Table.background"));
+                setEnabled(true);
+            }
 
-                return this;
+            return this;
         }
     }
 
@@ -858,17 +867,17 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         boolean isGray(int row) {
             String prodIdCell = String.valueOf(productsTable.getValueAt(row, 1));
-            
+
             if (checkId(prodIdCell)) {
                 return false;
             } else {
                 return true;
             }
         }
-        
+
         @Override
         public boolean isCellEditable(int row, int column) {
-            
+
             return column == 0 && isGray(row);
         }
 

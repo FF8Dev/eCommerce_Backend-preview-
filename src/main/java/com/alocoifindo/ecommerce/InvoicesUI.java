@@ -26,7 +26,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Vector;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractCellEditor;
@@ -58,7 +60,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
     static InvoicesTableModel invoicesTableModel = new InvoicesTableModel();
     static InvoicesUI invoicesUI = new InvoicesUI();
 
-    String[] optionsCombo = {"Issued", "Paid", "Cancelled"};
+    List<String> optionsCombo = new ArrayList<>();
 
     static DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
 
@@ -72,6 +74,15 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
         setLocationRelativeTo(null);
         addWindowListener(this);
 
+        if (LoginUI.privileges) {
+            optionsCombo.add("Issued");
+            optionsCombo.add("Paid");
+            optionsCombo.add("Cancelled");
+        } else {
+            optionsCombo.add("Issued");
+            optionsCombo.add("Cancelled");
+        }
+        
         invoicesTable.setRowHeight(25);
         TableColumnModel columnModel = invoicesTable.getColumnModel();
         columnModel.getColumn(0).setPreferredWidth(50); // Username
@@ -91,10 +102,8 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
         header.setDefaultRenderer(new HeaderRenderer(invoicesTable));
 
         // Add ComboBox to table
-        if (LoginUI.privileges) {
-            invoicesTable.setDefaultRenderer(JComboBox.class, new StatusCellRenderer());
-            invoicesTable.setDefaultEditor(JComboBox.class, new StatusComboBoxEditor());
-        }
+        invoicesTable.setDefaultRenderer(JComboBox.class, new StatusCellRenderer());
+        invoicesTable.setDefaultEditor(JComboBox.class, new StatusComboBoxEditor());
 
         // dispose by ESCAPE_KEY
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -256,12 +265,14 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("Couldn't set 'Cancelled' in the shipmanet_status Invoice");
         }
     }
-    
-    static void cancelOrder(int orderId) {       
+
+    static void cancelOrder(int orderId) {
         String xmlFile = String.format("%06d", orderId) + ".xml";
         File xmlManipulSrc = new File(OrderUI.xmlFolder + "/" + xmlFile);
         File xmlManipulTrg = new File(OrderUI.xmlCancelledFolder + "/" + xmlFile);
         
+        System.out.println("XML Manipul SRC: " + xmlManipulSrc);
+
         if (Files.exists(xmlManipulSrc.toPath())) {
             System.out.println("Source moving: " + xmlManipulSrc.toPath());
             try {
@@ -277,12 +288,12 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
             System.out.println("File XML not cancelled\n");
         }
     }
-    
+
     static void readmitOrder(int orderId) {
         String xmlFile = String.format("%06d", orderId) + ".xml";
         File xmlManipulSrc = new File(OrderUI.xmlCancelledFolder + "/" + xmlFile);
         File xmlManipulTrg = new File(OrderUI.xmlFolder + "/" + xmlFile);
-        
+
         if (Files.exists(xmlManipulSrc.toPath())) {
             System.out.println("Moving: " + xmlManipulSrc.toPath());
             try {
@@ -340,7 +351,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
                 this.row = orderIdTemp;
             }
 
-            JComboBox statusComboBox = new JComboBox(optionsCombo);
+            JComboBox statusComboBox = new JComboBox(optionsCombo.toArray());
 
             statusComboBox.setSelectedItem(status);
             statusComboBox.addActionListener(this);
@@ -387,11 +398,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
                 case 2:
                     return true;
                 case 4:
-                    if (LoginUI.privileges) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    return true;
                 default:
                     return false;
             }
@@ -400,7 +407,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
         // 0= "Username", 1= "Order ID", 2= "Status", 3= "Issue Date", 4= "Payment Date", 5= "Amount"
         @Override
         public void setValueAt(Object aValue, int row, int column) {
-            orderIdTemp = invoicesTableModel.getRowCount() - row;
+            orderIdTemp = Integer.parseInt((String)invoicesTableModel.getValueAt(row, 1));
             if (column == 2) {                                                  // Status
                 Vector rowData = (Vector) getDataVector().get(row);
                 rowData.set(2, (String) aValue);

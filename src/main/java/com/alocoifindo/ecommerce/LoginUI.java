@@ -22,6 +22,7 @@ public class LoginUI extends javax.swing.JFrame {
     static int idUser;
     static String username;
     static String password;
+    static int discount;
     static boolean privileges;
     static boolean fromLogin;
     static boolean showAppUI;
@@ -36,6 +37,34 @@ public class LoginUI extends javax.swing.JFrame {
         getRootPane().setDefaultButton(loginButton);
         errorLabel.setVisible(false);
         lostPasswordButton.setVisible(false);
+    }
+
+    public static void setCustomerData(int userId) {
+        try {
+            Connection con = RentMyStuff.startConnection();
+
+            // SELECT for retrieve Customer data
+            PreparedStatement stmtCust = con.prepareStatement("SELECT * FROM Customers WHERE id_user=?");
+            stmtCust.setInt(1, userId);
+            ResultSet rsCust = stmtCust.executeQuery();
+            if (rsCust.next()) {
+                RentMyStuff.customer.setFirstname(rsCust.getString("firstname"));
+                RentMyStuff.customer.setLastname(rsCust.getString("lastname"));
+                RentMyStuff.customer.setAddressLine(rsCust.getString("address_line"));
+                RentMyStuff.customer.setCity(rsCust.getString("city"));
+                RentMyStuff.customer.setPostalcode(rsCust.getInt("postalcode"));
+                RentMyStuff.customer.setTelephone(rsCust.getInt("telephone"));
+                RentMyStuff.customer.setEmail(rsCust.getString("email"));
+            } else {
+                System.out.println("Customer info not retrived");
+            }
+            RentMyStuff.closeResultSet(rsCust);
+            RentMyStuff.closeStatement(stmtCust);
+            RentMyStuff.stopConnection(con);
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
 
     /**
@@ -229,8 +258,9 @@ public class LoginUI extends javax.swing.JFrame {
                     }
                 }
                 idUser = rs.getInt("id_user");
-                int discount = rs.getInt("discount");
+                discount = rs.getInt("discount");
 
+                // set Customer Data in RentMyStuff
                 if (privileges == true) {
                     RentMyStuff.customer.setId(2);
                     RentMyStuff.customer.setUsername("default_customer");
@@ -246,24 +276,9 @@ public class LoginUI extends javax.swing.JFrame {
                     RentMyStuff.customer.setId(idUser);
                     RentMyStuff.customer.setUsername(username);
                     RentMyStuff.customer.setDiscount(discount);
-                    // SELECT for retrieve Customer data
-                    PreparedStatement stmtCust = con.prepareStatement("SELECT * FROM Customers WHERE id_user=?");
-                    stmtCust.setInt(1, idUser);
-                    ResultSet rsCust = stmtCust.executeQuery();
-                    if (rsCust.next()) {
-                        RentMyStuff.customer.setFirstname(rsCust.getString("firstname"));
-                        RentMyStuff.customer.setLastname(rsCust.getString("lastname"));
-                        RentMyStuff.customer.setAddressLine(rsCust.getString("address_line"));
-                        RentMyStuff.customer.setCity(rsCust.getString("city"));
-                        RentMyStuff.customer.setPostalcode(rsCust.getInt("postalcode"));
-                        RentMyStuff.customer.setTelephone(rsCust.getInt("telephone"));
-                        RentMyStuff.customer.setEmail(rsCust.getString("email"));
-                    } else {
-                        System.out.println("Customer info not retrived");
-                    }
-                    RentMyStuff.closeResultSet(rsCust);
-                    RentMyStuff.closeStatement(stmtCust);
+                    setCustomerData(idUser);
                 }
+                
 
                 setVisible(false);
                 ApplicationUI.appUI.setVisible(true);

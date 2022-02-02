@@ -792,6 +792,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
                 // Update appUI Data
                 ApplicationUI.listCustomers();
                 ApplicationUI.setCustomerDataUI();
+                ApplicationUI.setDiscountInTable();
                 setVisible(false);
                 
                 if (RentMyStuff.DEBUG) {
@@ -895,6 +896,7 @@ public class UserUI extends javax.swing.JFrame implements WindowListener {
 
                     ApplicationUI.listCustomers();
                     ApplicationUI.setCustomerDataUI();
+                    ApplicationUI.setDiscountInTable();
                     setVisible(false);
 
                     // loginUI#Visible(false) if exist

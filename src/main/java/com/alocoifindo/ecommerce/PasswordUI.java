@@ -404,7 +404,8 @@ public class PasswordUI extends javax.swing.JFrame implements WindowListener {
                         if (setPasswordInto(newPassword, idUserChange)) {
                             RentMyStuff.customer.setId(idUserChange);
                             RentMyStuff.customer.setDiscount(discount);
-
+                            LoginUI.setCustomerData(idUserChange);
+                            
                             setVisible(false);
                             LoginUI.loginUI.setVisible(false);
                             ApplicationUI.appUI.setVisible(true);
