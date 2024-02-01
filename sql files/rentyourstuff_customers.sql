@@ -50,7 +50,7 @@ CREATE TABLE `customers` (
 
 LOCK TABLES `customers` WRITE;
 /*!40000 ALTER TABLE `customers` DISABLE KEYS */;
-INSERT INTO `customers` VALUES (2,'','','',00000,'','default@email.com',0,0,'2021-11-23 15:54:08','2021-12-11 07:57:34',1),(3,'Ale','Gomez','C Salvador Spriu 23, 2, 3',08172,'Sant Cugat del Vallès','agomezurrea@gmail.com',682381083,20,'2021-11-17 11:27:44','2021-11-17 11:27:44',1),(4,'Pippo','Listo','C La Santa 121',08188,'Sant Pedor','pippo@losabe.com',654555777,35,'2021-11-17 11:27:54','2021-12-22 12:05:50',1),(5,'Alocoifindo','Supremus','Carrer de la Juridisprudencia 88',08191,'Sant Cugat','alocoifindo@gmail.com',134567890,50,'2021-11-21 17:29:02','2021-12-20 18:49:13',5),(6,'Pippo','Sabe','C La Santa 121',08188,'Sant Pedor','pippoguapo@losabe.com',654783212,90,'2021-12-12 22:12:49','2021-12-19 13:31:56',1);
+INSERT INTO `customers` VALUES (2,'','','',00000,'','default@email.com',0,0,'2021-11-23 15:54:08','2021-12-11 07:57:34',1),(3,'Ale','Gomez','C Ultimate Salà, 4 2,08172,'Sant Cugat del Vallès','agomezurrea@gmail.com',682381083,20,'2021-11-17 11:27:44','2021-11-17 11:27:44',1),(4,'Pippo','Listo','C La Santa 121',08188,'Sant Pedor','pippo@losabe.com',654555777,35,'2021-11-17 11:27:54','2021-12-22 12:05:50',1),(5,'Alocoifindo','Supremus','Carrer de la Juridisprudencia 88',08191,'Sant Cugat','alocoifindo@gmail.com',134567890,50,'2021-11-21 17:29:02','2021-12-20 18:49:13',5),(6,'Pippo','Sabe','C La Santa 121',08188,'Sant Pedor','pippoguapo@losabe.com',654783212,90,'2021-12-12 22:12:49','2021-12-19 13:31:56',1);
 /*!40000 ALTER TABLE `customers` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
