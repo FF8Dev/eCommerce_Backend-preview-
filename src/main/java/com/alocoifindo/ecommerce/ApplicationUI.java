@@ -1038,8 +1038,6 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 BufferedImage img = null;
                 try {
                     File imagePath = new File("BD Photos/coded/" + rsProducts.getString("id_product_named") + ".png");
-                    System.out.println(imagePath.getPath());
-                    System.out.println(imagePath.getAbsolutePath());
                     img = ImageIO.read(imagePath);
                     Image image = img;
                     icon = new ImageIcon(image);
