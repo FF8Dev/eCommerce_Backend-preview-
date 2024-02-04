@@ -35,12 +35,14 @@ public class RentMyStuff {
 
     static public Connection startConnection() throws SQLException {
         Connection con = null;
+        ConnectionData cd = new ConnectionData();
+
         try {
             // MySQL Driver dependency driver for Maven
             Class.forName("com.mysql.cj.jdbc.Driver");
-            String urlDB = "jdbc:mysql://localhost:3306/rentyourstuff";
-            String user = "root";
-            String pass = "pa88#word";
+            String urlDB = "jdbc:mysql://" + cd.hostname + ":3306/rentyourstuff";
+            String user = cd.user;
+            String pass = cd.pass;
             con = DriverManager.getConnection(urlDB, user, pass);
             if (DEBUGdb) {
                 System.out.println("Connected to Database");
@@ -61,7 +63,7 @@ public class RentMyStuff {
             }
         }
     }
-    
+
     static public void closeStatement(PreparedStatement stmt) throws SQLException {
         try {
             stmt.close();
@@ -83,7 +85,7 @@ public class RentMyStuff {
             }
         }
     }
-    
+
     /**
      * @param args the command line arguments
      */

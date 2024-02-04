@@ -1024,17 +1024,29 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             while (rsProducts.next()) {
                 // Preparing Icon and get from ResultSetof Products
                 ImageIcon icon = null;
-                InputStream is = rsProducts.getBinaryStream("Image");
-                // Decode the inputstream as BufferedImage
+//                InputStream is = rsProducts.getBinaryStream("Image");
+//                // Decode the inputstream as BufferedImage
+//                try {
+//                    BufferedImage bufImg = null;
+//                    bufImg = ImageIO.read(is);
+//                    Image image = bufImg;
+//                    icon = new ImageIcon(image);
+//                } catch (IOException ioe) {
+//                    System.out.println("Error catching image");
+//                    ioe.printStackTrace();
+//                }
+                BufferedImage img = null;
                 try {
-                    BufferedImage bufImg = null;
-                    bufImg = ImageIO.read(is);
-                    Image image = bufImg;
+                    File imagePath = new File("BD Photos/coded/" + rsProducts.getString("id_product_named") + ".png");
+                    System.out.println(imagePath.getPath());
+                    System.out.println(imagePath.getAbsolutePath());
+                    img = ImageIO.read(imagePath);
+                    Image image = img;
                     icon = new ImageIcon(image);
-                } catch (IOException ioe) {
-                    System.out.println("Error catching image");
-                    ioe.printStackTrace();
+                } catch (IOException e) {
+
                 }
+
                 // Get rest of ResultSet of Products
                 int idProduct = rsProducts.getInt("id_product");
                 String idProductNamed = rsProducts.getString("id_product_named");
