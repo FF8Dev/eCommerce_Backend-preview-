@@ -230,17 +230,17 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         try {
             Connection con = RentMyStuff.startConnection();
 
-            PreparedStatement stmtSelTempOrd = con.prepareStatement("SELECT shipment_status FROM Orders WHERE id_order = ?");
+            PreparedStatement stmtSelTempOrd = con.prepareStatement("SELECT shipment_status FROM [rentmystuff].Orders WHERE id_order = ?");
             stmtSelTempOrd.setInt(1, idOrder);
             ResultSet rsTempOrd = stmtSelTempOrd.executeQuery();
             rsTempOrd.next();
             tempStatus = rsTempOrd.getString("shipment_status");
             if (tempStatus.equals("Not Finished")) {
-                PreparedStatement stmtDelTempOrdLn = con.prepareStatement("DELETE FROM order_line WHERE id_order = ?");
+                PreparedStatement stmtDelTempOrdLn = con.prepareStatement("DELETE FROM [rentmystuff].order_line WHERE id_order = ?");
                 stmtDelTempOrdLn.setInt(1, idOrder);
                 stmtDelTempOrdLn.executeUpdate();
 
-                PreparedStatement stmtDelTempOrd = con.prepareStatement("DELETE FROM Orders WHERE id_order = ?");
+                PreparedStatement stmtDelTempOrd = con.prepareStatement("DELETE FROM [rentmystuff].Orders WHERE id_order = ?");
                 stmtDelTempOrd.setInt(1, idOrder);
                 stmtDelTempOrd.executeUpdate();
 
@@ -325,7 +325,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         try {
             Connection con = RentMyStuff.startConnection();
 
-            PreparedStatement stmtUpdOrd = con.prepareStatement("UPDATE Orders SET last_update=NOW() WHERE id_order=?");
+            PreparedStatement stmtUpdOrd = con.prepareStatement("UPDATE [rentmystuff].Orders SET last_update=GETDATE() WHERE id_order=?");
             stmtUpdOrd.setInt(1, idOrder);
             stmtUpdOrd.executeUpdate();
 
@@ -341,15 +341,18 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         try {
             Connection con = RentMyStuff.startConnection();
 
-            PreparedStatement stmtRstOrderLine = con.prepareStatement("DELETE FROM order_line");
-            PreparedStatement stmtRstIncrem = con.prepareStatement("ALTER TABLE order_line AUTO_INCREMENT = 1");
-            PreparedStatement stmtRstOrderNotFinished = con.prepareStatement("DELETE FROM orders WHERE shipment_status = 'Not Finished'");
+            PreparedStatement stmtRstOrderLine = con.prepareStatement("DELETE FROM [rentmystuff].order_line");
+            PreparedStatement stmtRstIncrem = con.prepareStatement(
+                            "ALTER TABLE [rentmystuff].order_line DROP COLUMN id_order_line; "
+                            + "ALTER TABLE [rentmystuff].order_line ADD id_order_line INT NOT NULL IDENTITY(1,1)"
+            );
+            PreparedStatement stmtRstOrderNotFinished = con.prepareStatement("DELETE FROM [rentmystuff].orders WHERE shipment_status = 'Not Finished'");
 
             stmtRstOrderLine.executeUpdate();
             stmtRstIncrem.execute();
             stmtRstOrderNotFinished.executeUpdate();
 
-            PreparedStatement stmtOrderId = con.prepareStatement("SELECT MAX(id_order) AS id_order FROM Orders");
+            PreparedStatement stmtOrderId = con.prepareStatement("SELECT MAX(id_order) AS id_order FROM [rentmystuff].Orders");
             ResultSet rsOrdId = stmtOrderId.executeQuery();
             rsOrdId.next();
             idOrder = rsOrdId.getInt("id_order") + 1;
@@ -358,7 +361,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                 System.out.println("next order_id: " + idOrder);
             }
 
-            PreparedStatement stmtOrdCreate = con.prepareStatement("INSERT INTO orders VALUES (?, NOW(), 1, ?, ?, ?, 'Not Finished', NOW(), ?, ?)");
+            PreparedStatement stmtOrdCreate = con.prepareStatement("INSERT INTO [rentmystuff].orders VALUES (?, GETDATE(), 1, ?, ?, ?, 'Not Finished', GETDATE(), ?, ?)");
             stmtOrdCreate.setInt(1, idOrder);
             int userOrder;
             // if user cames from SignUp
@@ -386,7 +389,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             RentMyStuff.closeStatement(stmtOrdCreate);
             RentMyStuff.stopConnection(con);
         } catch (SQLException ex) {
-            System.out.println("Cannot DELETE FROM order_line TABLE OR SELECT MAX(id_order) OR INSERT NEW order");
+            System.out.println("Cannot DELETE FROM [rentmystuff].order_line TABLE OR SELECT MAX(id_order) OR INSERT NEW order");
             ex.printStackTrace();
         }
     }
@@ -399,7 +402,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
         try {
             Connection con = RentMyStuff.startConnection();
-            String selectCustomersSQL = "SELECT * FROM Users NATURAL JOIN Customers WHERE users.id_user = customers.id_user ORDER BY id_user ASC";
+            String selectCustomersSQL = "SELECT * FROM [rentmystuff].Users JOIN [rentmystuff].Customers ON [rentmystuff].users.id_user = [rentmystuff].customers.id_user ORDER BY [rentmystuff].users.id_user ASC";
             PreparedStatement stmtCustomers = con.prepareStatement(selectCustomersSQL);
             ResultSet rsCustomers = stmtCustomers.executeQuery();
 
@@ -460,8 +463,8 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
 
                 try {
                     Connection con = RentMyStuff.startConnection();
-                    String selectDiscountsSQL = "SELECT id_user, username, discount, firstname, lastname, address_line, city, postalcode, telephone, email"
-                            + " FROM Users NATURAL JOIN Customers WHERE users.id_user = customers.id_user AND username=? ORDER BY id_user ASC;";
+                    String selectDiscountsSQL = "SELECT customers.id_user, username, discount, firstname, lastname, address_line, city, postalcode, telephone, email"
+                            + " FROM [rentmystuff].Users JOIN [rentmystuff].Customers ON users.id_user = customers.id_user AND username=? ORDER BY [rentmystuff].users.id_user ASC;";
                     PreparedStatement stmtDiscounts = con.prepareStatement(selectDiscountsSQL);
                     stmtDiscounts.setString(1, tempUsername);
                     ResultSet rsCustSelected = stmtDiscounts.executeQuery();
@@ -482,7 +485,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                         System.out.println("Discount customer selected: " + RentMyStuff.customer.getDiscount());
                     }
 
-                    String updateOrderSQL = "UPDATE Orders SET id_tocustomer=? WHERE id_order=?";
+                    String updateOrderSQL = "UPDATE [rentmystuff].Orders SET id_tocustomer=? WHERE id_order=?";
                     PreparedStatement stmtUpdOrd = con.prepareStatement(updateOrderSQL);
                     stmtUpdOrd.setInt(1, RentMyStuff.customer.getId());
                     stmtUpdOrd.setInt(2, idOrder);
@@ -580,7 +583,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             Connection con;
             try {
                 con = RentMyStuff.startConnection();
-                String updateDateStartSQL = "UPDATE Orders SET start_rent_date=?, total_days=? WHERE id_order=?";
+                String updateDateStartSQL = "UPDATE [rentmystuff].Orders SET start_rent_date=?, total_days=? WHERE id_order=?";
 
                 PreparedStatement stmtDateStart = con.prepareStatement(updateDateStartSQL);
                 stmtDateStart.setDate(1, Date.valueOf(dce.getNewDate()));
@@ -622,7 +625,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
             Connection con;
             try {
                 con = RentMyStuff.startConnection();
-                String updateDateEndSQL = "UPDATE Orders SET end_rent_date=?, total_days=? WHERE id_order=?";
+                String updateDateEndSQL = "UPDATE [rentmystuff].Orders SET end_rent_date=?, total_days=? WHERE id_order=?";
 
                 PreparedStatement stmtDateEnd = con.prepareStatement(updateDateEndSQL);
                 stmtDateEnd.setDate(1, Date.valueOf(dce.getNewDate()));
@@ -936,7 +939,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                     try {
                         Connection con = RentMyStuff.startConnection();
 
-                        PreparedStatement stmtIns = con.prepareStatement("INSERT INTO order_line (id_product, id_order) VALUES (?, ?);");
+                        PreparedStatement stmtIns = con.prepareStatement("INSERT INTO [rentmystuff].order_line (id_product, id_order) VALUES (?, ?);");
                         if (RentMyStuff.DEBUG) {
                             System.out.println("id_product insert into order_line: " + RentMyStuff.products.get(row).getId());
                         }
@@ -985,7 +988,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
                         try {
                             Connection con = RentMyStuff.startConnection();
 
-                            PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
+                            PreparedStatement stmtDel = con.prepareStatement("DELETE FROM [rentmystuff].order_line WHERE id_product=?;");
                             if (RentMyStuff.DEBUG) {
                                 System.out.println("Product ID deleted from order_line: " + RentMyStuff.products.get(row).getId());
                             }
@@ -1017,7 +1020,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         try {
             Connection con = RentMyStuff.startConnection();
 
-            String selectProductsSQL = "SELECT id_product, id_product_named, Image, CONCAT(brand, \" \", model_name) AS Product, Category, Keywords, price_per_day, discount_per_days FROM Products";
+            String selectProductsSQL = "SELECT id_product, id_product_named, Image, CONCAT(brand, ' ', model_name) AS Product, Category, Keywords, price_per_day, discount_per_days FROM [rentmystuff].Products";
             PreparedStatement stmtProducts = con.prepareStatement(selectProductsSQL);
             ResultSet rsProducts = stmtProducts.executeQuery();
 
@@ -1212,7 +1215,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
     }
 
     public static void updateOrderLine() {
-        String updateOrderLineSQL = "INSERT INTO order_line(id_product, id_order) VALUES (?, ?)";
+        String updateOrderLineSQL = "INSERT INTO [rentmystuff].order_line(id_product, id_order) VALUES (?, ?)";
         try {
             Connection con = RentMyStuff.startConnection();
             for (int i = 0; i < productsTableModel.getRowCount(); i++) {
@@ -1255,7 +1258,7 @@ public class ApplicationUI extends javax.swing.JFrame implements WindowListener 
         // update Order amount
         try {
             Connection con = RentMyStuff.startConnection();
-            PreparedStatement stmtAmnt = con.prepareStatement("UPDATE Orders SET amount=? WHERE id_order=?");
+            PreparedStatement stmtAmnt = con.prepareStatement("UPDATE [rentmystuff].Orders SET amount=? WHERE id_order=?");
             stmtAmnt.setDouble(1, Double.parseDouble(finalPriceSumFormat));
             stmtAmnt.setInt(2, idOrder);
             stmtAmnt.executeUpdate();

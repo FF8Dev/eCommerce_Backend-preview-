@@ -340,7 +340,7 @@ public class OrderUI extends javax.swing.JFrame {
                     try {
                         Connection con = RentMyStuff.startConnection();
 
-                        PreparedStatement stmtIns = con.prepareStatement("INSERT IGNORE INTO order_line (id_product, id_order) VALUES (?, ?)");
+                        PreparedStatement stmtIns = con.prepareStatement("INSERT IGNORE INTO [rentmystuff].order_line (id_product, id_order) VALUES (?, ?)");
                         if (RentMyStuff.DEBUG) {
                             System.out.println("Product ID insert ignore into order_line: " + productRow);
                         }
@@ -374,7 +374,7 @@ public class OrderUI extends javax.swing.JFrame {
                     try {
                         Connection con = RentMyStuff.startConnection();
 
-                        PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
+                        PreparedStatement stmtDel = con.prepareStatement("DELETE FROM [rentmystuff].order_line WHERE id_product=?;");
                         if (RentMyStuff.DEBUG) {
                             System.out.println("Product ID deleted from order_line: " + productRow);
                         }
@@ -476,7 +476,7 @@ public class OrderUI extends javax.swing.JFrame {
                     try {
                         Connection con = RentMyStuff.startConnection();
 
-                        PreparedStatement stmtIns = con.prepareStatement("INSERT IGNORE INTO order_line (id_product, id_order) VALUES (?, ?)");
+                        PreparedStatement stmtIns = con.prepareStatement("INSERT IGNORE INTO [rentmystuff].order_line (id_product, id_order) VALUES (?, ?)");
                         if (RentMyStuff.DEBUG) {
                             System.out.println("Product ID insert ignore into order_line: " + productRow);
                         }
@@ -510,7 +510,7 @@ public class OrderUI extends javax.swing.JFrame {
                     try {
                         Connection con = RentMyStuff.startConnection();
 
-                        PreparedStatement stmtDel = con.prepareStatement("DELETE FROM order_line WHERE id_product=?;");
+                        PreparedStatement stmtDel = con.prepareStatement("DELETE FROM [rentmystuff].order_line WHERE id_product=?;");
                         if (RentMyStuff.DEBUG) {
                             System.out.println("Product ID deleted from order_line: " + productRow);
                         }
@@ -551,16 +551,16 @@ public class OrderUI extends javax.swing.JFrame {
                     + "order_line.id_order,\n"
                     + "order_line.id_product,\n"
                     + "id_product_named,\n"
-                    + "CONCAT(brand, \" \", model_name) AS Product, \n"
+                    + "CONCAT(brand, ' ', model_name) AS Product, \n"
                     + "price_per_day, \n"
                     + "total_days, \n"
                     + "discount_per_days, \n"
                     + "customers.discount\n"
-                    + "FROM Products \n"
-                    + "INNER JOIN order_line ON Products.id_product = order_line.id_product\n"
-                    + "INNER JOIN Orders ON order_line.id_order = Orders.id_order\n"
-                    + "INNER JOIN Customers ON Orders.id_toCustomer=Customers.id_user\n"
-                    + "INNER JOIN Users ON Customers.id_user = Users.id_user\n"
+                    + "FROM [rentmystuff].Products \n"
+                    + "INNER JOIN [rentmystuff].order_line ON Products.id_product = order_line.id_product\n"
+                    + "INNER JOIN [rentmystuff].Orders ON order_line.id_order = Orders.id_order\n"
+                    + "INNER JOIN [rentmystuff].Customers ON Orders.id_toCustomer=Customers.id_user\n"
+                    + "INNER JOIN [rentmystuff].Users ON Customers.id_user = Users.id_user\n"
                     + "WHERE Orders.id_order=?";
 
             PreparedStatement stmtProductsOrder = con.prepareStatement(selectProductsOrderSQL);
@@ -658,7 +658,7 @@ public class OrderUI extends javax.swing.JFrame {
 
         try {
             Connection con = RentMyStuff.startConnection();
-            PreparedStatement stmtDataChck = con.prepareStatement("SELECT * FROM Customers WHERE id_user=?");
+            PreparedStatement stmtDataChck = con.prepareStatement("SELECT * FROM [rentmystuff].Customers WHERE id_user=?");
             stmtDataChck.setInt(1, RentMyStuff.customer.getId());
             ResultSet rsDataChck = stmtDataChck.executeQuery();
             rsDataChck.next();
@@ -700,9 +700,9 @@ public class OrderUI extends javax.swing.JFrame {
     }
 
     private boolean updateOrderCheck() {
-        String updateOrderStatusSQL = "UPDATE Orders SET shipment_status='Waiting' WHERE id_order=?";
-        String updateLastOrderSQL = "UPDATE Orders SET total_days=?, start_rent_date=?, end_rent_date=?, amount=?, id_tocustomer=? WHERE id_order=?";
-        String updateOrderLineSQL = "UPDATE order_line SET id_order=?";
+        String updateOrderStatusSQL = "UPDATE [rentmystuff].Orders SET shipment_status='Waiting' WHERE id_order=?";
+        String updateLastOrderSQL = "UPDATE [rentmystuff].Orders SET total_days=?, start_rent_date=?, end_rent_date=?, amount=?, id_tocustomer=? WHERE id_order=?";
+        String updateOrderLineSQL = "UPDATE [rentmystuff].order_line SET id_order=?";
         if (!sameOrder) {
             try {
                 Connection con = RentMyStuff.startConnection();
@@ -903,16 +903,16 @@ public class OrderUI extends javax.swing.JFrame {
                         + "orders.id_tocustomer,\n"
                         + "order_line.id_order,\n"
                         + "order_line.id_product,\n"
-                        + "CONCAT(brand, \" \", model_name) AS Product, \n"
+                        + "CONCAT(brand, ' ', model_name) AS Product, \n"
                         + "price_per_day, \n"
                         + "total_days, \n"
                         + "discount_per_days, \n"
                         + "customers.discount\n"
-                        + "FROM Products \n"
-                        + "INNER JOIN order_line ON Products.id_product = order_line.id_product\n"
-                        + "INNER JOIN Orders ON order_line.id_order = Orders.id_order\n"
-                        + "INNER JOIN Customers ON Orders.id_toCustomer=Customers.id_user\n"
-                        + "INNER JOIN Users ON Customers.id_user = Users.id_user\n"
+                        + "FROM [rentmystuff].Products \n"
+                        + "INNER JOIN [rentmystuff].order_line ON Products.id_product = order_line.id_product\n"
+                        + "INNER JOIN [rentmystuff].Orders ON order_line.id_order = Orders.id_order\n"
+                        + "INNER JOIN [rentmystuff].Customers ON Orders.id_toCustomer=Customers.id_user\n"
+                        + "INNER JOIN [rentmystuff].Users ON Customers.id_user = Users.id_user\n"
                         + "WHERE Orders.id_order=?\n"
                         + "ORDER BY id_product_named ASC";
 
@@ -1085,12 +1085,12 @@ public class OrderUI extends javax.swing.JFrame {
             try {
                 Connection con = RentMyStuff.startConnection();
 
-                PreparedStatement stmtMaxInvId = con.prepareStatement("SELECT MAX(id_invoice) AS id_invoice FROM Invoices");
+                PreparedStatement stmtMaxInvId = con.prepareStatement("SELECT MAX(id_invoice) AS id_invoice FROM [rentmystuff].Invoices");
                 ResultSet rsInvId = stmtMaxInvId.executeQuery();
                 rsInvId.next();
                 invoiceId = rsInvId.getInt("id_invoice") + 1;
 
-                PreparedStatement stmtInsInvoice = con.prepareStatement("INSERT INTO Invoices(id_invoice, nif, invoice_status, tax_amount, issue_date, id_order) VALUES(?, '" + nif + "', 'Issued', ?, NOW(), ?)");
+                PreparedStatement stmtInsInvoice = con.prepareStatement("INSERT INTO [rentmystuff].Invoices(id_invoice, nif, invoice_status, tax_amount, issue_date, id_order) VALUES(?, '" + nif + "', 'Issued', ?, GETDATE(), ?)");
                 stmtInsInvoice.setDouble(1, invoiceId);
                 stmtInsInvoice.setDouble(2, taxesFormat);
                 stmtInsInvoice.setInt(3, RentMyStuff.order.getId());
@@ -1110,7 +1110,7 @@ public class OrderUI extends javax.swing.JFrame {
             try {
                 Connection con = RentMyStuff.startConnection();
 
-                PreparedStatement stmtUpdInvoice = con.prepareStatement("UPDATE Invoices SET tax_amount=?, issue_date=NOW() WHERE id_order=?");
+                PreparedStatement stmtUpdInvoice = con.prepareStatement("UPDATE [rentmystuff].Invoices SET tax_amount=?, issue_date=GETDATE() WHERE id_order=?");
                 stmtUpdInvoice.setDouble(1, taxesFormat);
                 stmtUpdInvoice.setInt(2, RentMyStuff.order.getId());
                 stmtUpdInvoice.executeUpdate();

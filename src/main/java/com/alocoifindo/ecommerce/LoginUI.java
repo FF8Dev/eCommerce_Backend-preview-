@@ -240,7 +240,7 @@ public class LoginUI extends javax.swing.JFrame {
         try {
             Connection con = RentMyStuff.startConnection();
 
-            PreparedStatement stmt = con.prepareStatement("SELECT privileges, users.id_user, discount FROM Users LEFT JOIN Customers ON Users.id_user = Customers.id_user WHERE username=? and password= MD5(?)");
+            PreparedStatement stmt = con.prepareStatement("SELECT privileges, users.id_user, discount FROM rentmystuff.Users LEFT JOIN rentmystuff.Customers ON Users.id_user = Customers.id_user WHERE username=? and password=  ?");
             stmt.setString(1, username);
             stmt.setString(2, password);
             ResultSet rs = stmt.executeQuery();

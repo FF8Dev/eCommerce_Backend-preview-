@@ -12,8 +12,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+
 import javax.swing.JButton;
 import javax.swing.JTextField;
+
+import java.util.logging.Logger;
 
 /**
  *
@@ -33,17 +37,35 @@ public class RentMyStuff {
     private JTextField dateTextField;
     private JButton toggleCalendarButton;
 
+    private static final Logger log;
+
+    static {
+        System.setProperty("java.util.logging.SimpleFormatter.format", "[%4$-7s] %5$s %n");
+        log = Logger.getLogger(RentMyStuff.class.getName());
+    }
+
     static public Connection startConnection() throws SQLException {
         Connection con = null;
         ConnectionData cd = new ConnectionData();
 
         try {
-            // MySQL Driver dependency driver for Maven
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            String urlDB = "jdbc:mysql://" + cd.hostname + ":3306/rentyourstuff";
-            String user = cd.user;
-            String pass = cd.pass;
-            con = DriverManager.getConnection(urlDB, user, pass);
+            // // MySQL Driver dependency driver for Maven
+            // Class.forName("com.mysql.cj.jdbc.Driver");
+            // String urlMyDB = "jdbc:" + cd.serverTypeMy + "://" + cd.hostnameMy + ":" +
+            // cd.portMy +"/" + cd.databaseMy;
+            // String userMy = cd.user;
+            // String pass = cd.pass;
+            // con = DriverManager.getConnection(urlDB, user, pass);
+
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+            log.info("Loading application properties");
+            Properties props = new Properties();
+            props.load(RentMyStuff.class.getClassLoader().getResourceAsStream("application.properties"));
+
+            log.info("Connecting to the database");
+            con = DriverManager.getConnection(props.getProperty("url"), props);
+            log.info("Database connection test: " + con.getCatalog());
+
             if (DEBUGdb) {
                 System.out.println("Connected to Database");
             }

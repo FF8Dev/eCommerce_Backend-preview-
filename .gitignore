@@ -1,3 +1,4 @@
 /target/
 .DS_Store
 /src/main/java/com/alocoifindo/ecommerce/ConnectionData.java
+/src/main/resources/application.properties
