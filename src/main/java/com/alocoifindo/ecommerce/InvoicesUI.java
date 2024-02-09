@@ -190,7 +190,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
     }
 
     static void statusUpdate(String status, int orderId) {
-        String updateStatusSQL = "UPDATE Invoices SET invoice_status=? WHERE id_order=?";
+        String updateStatusSQL = "UPDATE [rentmystuff].Invoices SET invoice_status=? WHERE id_order=?";
 
         try {
             Connection con = RentMyStuff.startConnection();
@@ -212,7 +212,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
 
     static void updatePaymentDate(String date, int orderId) {
         LocalDate dateSQL = LocalDate.parse(date, dateFormat);
-        String updateStatusSQL = "UPDATE Invoices SET payment_date=? WHERE id_order=?";
+        String updateStatusSQL = "UPDATE [rentmystuff].Invoices SET payment_date=? WHERE id_order=?";
 
         try {
             Connection con = RentMyStuff.startConnection();
@@ -231,7 +231,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
     }
 
     static void deletePaymentDate(int orderId) {
-        String updateStatusSQL = "UPDATE Invoices SET payment_date=null WHERE id_order=?";
+        String updateStatusSQL = "UPDATE [rentmystuff].Invoices SET payment_date=null WHERE id_order=?";
 
         try {
             Connection con = RentMyStuff.startConnection();
@@ -249,7 +249,7 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
     }
 
     static void cancelShipment(int orderId) {
-        String cancelStatusSQL = "UPDATE Orders SET shipment_status='Cancelled' WHERE id_order=?";
+        String cancelStatusSQL = "UPDATE [rentmystuff].Orders SET shipment_status='Cancelled' WHERE id_order=?";
 
         try {
             Connection con = RentMyStuff.startConnection();
@@ -458,10 +458,10 @@ public class InvoicesUI extends javax.swing.JFrame implements WindowListener {
         try {
             Connection con = RentMyStuff.startConnection();
 
-            String selectInvoicesSQL = "SELECT username, Orders.id_order, invoice_status, issue_date, payment_date, amount FROM Invoices "
-                    + "INNER JOIN Orders ON Invoices.id_order = Orders.id_order\n"
-                    + "INNER JOIN Customers ON Orders.id_tocustomer = Customers.id_user\n"
-                    + "INNER JOIN Users ON Customers.id_user = Users.id_user\n";
+            String selectInvoicesSQL = "SELECT username, Orders.id_order, invoice_status, issue_date, payment_date, amount FROM [rentmystuff].Invoices "
+                    + "INNER JOIN [rentmystuff].Orders ON Invoices.id_order = Orders.id_order\n"
+                    + "INNER JOIN [rentmystuff].Customers ON Orders.id_tocustomer = Customers.id_user\n"
+                    + "INNER JOIN [rentmystuff].Users ON Customers.id_user = Users.id_user\n";
             if (!LoginUI.privileges) {
                 selectInvoicesSQL += "WHERE Users.id_user=? ORDER BY id_order DESC";
             } else {

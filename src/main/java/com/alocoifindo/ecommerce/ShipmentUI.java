@@ -250,7 +250,7 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
     }
 
     static void statusUpdate(String status, int orderId) {
-        String updateStatusSQL = "UPDATE Orders SET shipment_status=? WHERE id_order=?";
+        String updateStatusSQL = "UPDATE [rentmystuff].Orders SET shipment_status=? WHERE id_order=?";
 
         try {
             Connection con = RentMyStuff.startConnection();
@@ -270,7 +270,7 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
     }
 
     static void cancelInvoice(int orderId) {
-        String cancelStatusSQL = "UPDATE Invoices SET invoice_status='Cancelled' WHERE id_order=?";
+        String cancelStatusSQL = "UPDATE [rentmystuff].Invoices SET invoice_status='Cancelled' WHERE id_order=?";
 
         try {
             Connection con = RentMyStuff.startConnection();
@@ -370,9 +370,9 @@ public class ShipmentUI extends javax.swing.JFrame implements WindowListener {
         try {
             Connection con = RentMyStuff.startConnection();
 
-            String selectShipmentsSQL = "SELECT username, id_order, start_rent_date, end_rent_date, shipment_status, Orders.last_update FROM Orders "
-                    + "INNER JOIN Customers ON Orders.id_tocustomer = Customers.id_user\n"
-                    + "INNER JOIN Users ON Customers.id_user = Users.id_user\n";
+            String selectShipmentsSQL = "SELECT username, id_order, start_rent_date, end_rent_date, shipment_status, Orders.last_update FROM [rentmystuff].Orders "
+                    + "INNER JOIN [rentmystuff].Customers ON Orders.id_tocustomer = Customers.id_user\n"
+                    + "INNER JOIN [rentmystuff].Users ON Customers.id_user = Users.id_user\n";
             if (!LoginUI.privileges) {
                 selectShipmentsSQL = selectShipmentsSQL + "WHERE Users.id_user=? ORDER BY id_order DESC";
             } else {
